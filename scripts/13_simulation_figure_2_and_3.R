@@ -11,12 +11,10 @@
 # Clear workspace
 rm(list = ls())
 
-# ==============================================================================
-# PLOTTING MODE CONFIGURATION
-# ==============================================================================
-
-# SET THIS TO EITHER "publication" OR "slide"
-PLOT_MODE <- "publication"  # Change to "publication" for journal-style plots
+#===============================================================================
+#           Which Figure to replicate (see paper for numbering)
+                      FIGURE <- 2 # in c(2,3)
+#===============================================================================
 
 # ==============================================================================
 # 1. SETUP AND DATA LOADING
@@ -26,11 +24,10 @@ PLOT_MODE <- "publication"  # Change to "publication" for journal-style plots
 library(dplyr)
 
 date <- "2026-01-23_SD"
-gets_lvl <- "0.05"
+gets_lvl <- "0.01"
 bisam_prior <- "imom"
-tau <- "1.92072941034706"
-# tau <- "3.31744830051061"
-setting <- "dense"
+tau <- "3.31744830051061"
+setting <- if(FIGURE == 2) "sparse" else if(FIGURE == 3) "dense"
 
 # Set up paths
 data_path <- sprintf("./output/simulation/%s/gets_bisam_comparison_gets-%s_bisam_prior-%s_tau-%s/", 
@@ -175,65 +172,34 @@ colors <- list(
 # 6. MODE-SPECIFIC SETTINGS
 # ==============================================================================
 
-if (PLOT_MODE == "slide") {
-  settings <- list(
-    # Font sizes
-    cex.lab = 1.8,
-    cex.axis = 1.6,
-    cex.main = 2.0,
-    cex.legend = 1.4,
-    
-    # Line and point sizes
-    lwd.line = 4.5,
-    lwd.axis = 2.5,
-    cex.point = 2.2,
-    
-    # Grid
-    lwd.grid = 1.5,
-    
-    # Margins
-    mar = c(5.5, 6.0, 4.0, 2.0),
-    mgp = c(4.0, 1.0, 0),
-    
-    # PDF dimensions
-    pdf.width = 16,
-    pdf.height = 9,
-    pdf.width.single = 12,
-    pdf.height.single = 9,
-    
-    # File suffix
-    suffix = "slides"
-  )
-} else {  # publication mode
-  settings <- list(
-    # Font sizes
-    cex.lab = 1.15,
-    cex.axis = 1.0,
-    cex.main = 1.25,
-    cex.legend = 0.95,
-    
-    # Line and point sizes
-    lwd.line = 2.5,
-    lwd.axis = 1.5,
-    cex.point = 1.3,
-    
-    # Grid
-    lwd.grid = 0.8,
-    
-    # Margins
-    mar = c(4.5, 4.8, 3.5, 1),
-    mgp = c(3.2, 0.7, 0),
-    
-    # PDF dimensions
-    pdf.width = 14,
-    pdf.height = 10,
-    pdf.width.single = 8,
-    pdf.height.single = 6,
-    
-    # File suffix
-    suffix = "publication"
-  )
-}
+settings <- list(
+  # Font sizes
+  cex.lab = 1.8,
+  cex.axis = 1.6,
+  cex.main = 2.0,
+  cex.legend = 1.4,
+  
+  # Line and point sizes
+  lwd.line = 4.5,
+  lwd.axis = 2.5,
+  cex.point = 2.2,
+  
+  # Grid
+  lwd.grid = 1.5,
+  
+  # Margins
+  mar = c(5.5, 6.0, 4.0, 2.0),
+  mgp = c(4.0, 1.0, 0),
+  
+  # PDF dimensions
+  pdf.width = 16,
+  pdf.height = 9,
+  pdf.width.single = 12,
+  pdf.height.single = 9,
+  
+  # File suffix
+  suffix = "paper"
+)
 
 # ==============================================================================
 # 7. ENHANCED PLOT SETUP FUNCTION
@@ -283,13 +249,7 @@ add_clean_axes <- function(side = 1:2, at_x = NULL, labels_x = NULL,
 
 # Output file names
 
-multi_panel_file <- sprintf("./output/simulation/%s/%s_multi_gets-%s_bisam-%s_tau-%s_%s.pdf", 
-                            date, 
-                            settings$suffix,
-                            gets_lvl,
-                            bisam_prior, 
-                            tau, 
-                            setting)
+multi_panel_file <- sprintf("./output/simulation/figure_%d.pdf", FIGURE)
 
 # Open PDF for multi-panel plot
 pdf(multi_panel_file, width = settings$pdf.width, height = settings$pdf.height)
@@ -570,316 +530,6 @@ legend("topright",
 mtext("D", side = 3, line = 1.5, at = par("usr")[1], cex = settings$cex.main, font = 2, adj = 0)
 
 dev.off()
-
-# ==============================================================================
-# 9. CREATE INDIVIDUAL HIGH-RESOLUTION PLOTS
-# ==============================================================================
-
-# Individual plot for Precision
-precision_file_individual <- sprintf("./output/simulation/%s/%s_precision_gets-%s_bisam-%s_tau-%s_%s.pdf", 
-                                     date, 
-                                     settings$suffix,
-                                     gets_lvl,
-                                     bisam_prior, 
-                                     ifelse(tau == "", "auto", tau), 
-                                     setting)
-
-pdf(precision_file_individual, width = settings$pdf.width.single, height = settings$pdf.height.single)
-par(mfrow = c(1, 1))
-setup_plot()
-
-plot(
-  x = log10(sd_numeric), 
-  y = NULL,
-  xlim = range(log10(sd_numeric)),
-  ylim = c(0, 1),
-  xlab = "Threshold Level (SD, log scale)",
-  ylab = "Precision",
-  main = "Precision",
-  type = "n",
-  axes = FALSE,
-  xaxs = "i",
-  yaxs = "i"
-)
-
-abline(h = seq(0, 1, 0.2), col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
-
-lines(log10(metrics$SD_num[ssvs_idx]), metrics$Precision[ssvs_idx], 
-      col = colors$ssvs, lwd = settings$lwd.line * 1.2)
-points(log10(metrics$SD_num[ssvs_idx]), metrics$Precision[ssvs_idx], 
-       col = colors$ssvs, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(metrics$SD_num[gets_idx]), metrics$Precision[gets_idx], 
-      col = colors$gets, lwd = settings$lwd.line * 1.2)
-points(log10(metrics$SD_num[gets_idx]), metrics$Precision[gets_idx], 
-       col = colors$gets, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(metrics$SD_num[alasso_idx]), metrics$Precision[alasso_idx], 
-      col = colors$alasso, lwd = settings$lwd.line * 1.2)
-points(log10(metrics$SD_num[alasso_idx]), metrics$Precision[alasso_idx], 
-       col = colors$alasso, pch = 16, cex = settings$cex.point * 1.15)
-
-add_clean_axes(
-  at_x = log10(sd_numeric), 
-  labels_x = breaksize_labels,
-  at_y = seq(0, 1, 0.2)
-)
-
-legend("bottomright", 
-       legend = c("BISAM", "GETS", "ALASSO"),
-       col = c(colors$ssvs, colors$gets, colors$alasso),
-       lty = 1,
-       pch = 16,
-       lwd = settings$lwd.line * 1.2,
-       bty = "n",
-       cex = settings$cex.legend * 1.15,
-       pt.cex = settings$cex.point)
-
-dev.off()
-
-# Individual plot for F1 Score
-f1_score_file <- sprintf("./output/simulation/%s/%s_f1_gets-%s_bisam-%s_tau-%s_%s.pdf", 
-                         date, 
-                         settings$suffix,
-                         gets_lvl,
-                         bisam_prior, 
-                         tau, 
-                         setting)
-
-pdf(f1_score_file, width = settings$pdf.width.single, height = settings$pdf.height.single)
-par(mfrow = c(1, 1))
-setup_plot()
-
-plot(
-  x = log10(sd_numeric), 
-  y = NULL,
-  xlim = range(log10(sd_numeric)),
-  ylim = c(0, 1),
-  xlab = "Threshold Level (SD, log scale)",
-  ylab = "F1 Score",
-  main = "F1 Score",
-  type = "n",
-  axes = FALSE,
-  xaxs = "i",
-  yaxs = "i"
-)
-
-abline(h = seq(0, 1, 0.2), col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
-
-lines(log10(metrics$SD_num[ssvs_idx]), metrics$F1[ssvs_idx], 
-      col = colors$ssvs, lwd = settings$lwd.line * 1.2)
-points(log10(metrics$SD_num[ssvs_idx]), metrics$F1[ssvs_idx], 
-       col = colors$ssvs, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(metrics$SD_num[gets_idx]), metrics$F1[gets_idx], 
-      col = colors$gets, lwd = settings$lwd.line * 1.2)
-points(log10(metrics$SD_num[gets_idx]), metrics$F1[gets_idx], 
-       col = colors$gets, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(metrics$SD_num[alasso_idx]), metrics$F1[alasso_idx], 
-      col = colors$alasso, lwd = settings$lwd.line * 1.2)
-points(log10(metrics$SD_num[alasso_idx]), metrics$F1[alasso_idx], 
-       col = colors$alasso, pch = 16, cex = settings$cex.point * 1.15)
-
-add_clean_axes(
-  at_x = log10(sd_numeric), 
-  labels_x = breaksize_labels,
-  at_y = seq(0, 1, 0.2)
-)
-
-legend("bottomright", 
-       legend = c("BISAM", "GETS", "ALASSO"),
-       col = c(colors$ssvs, colors$gets, colors$alasso),
-       lty = 1,
-       lwd = settings$lwd.line * 1.2,
-       pch = 16,
-       bty = "n",
-       cex = settings$cex.legend * 1.15,
-       pt.cex = settings$cex.point)
-
-dev.off()
-
-# Individual plot for TP and FP Rates
-tpfp_rate_file <- sprintf("./output/simulation/%s/%s_tpfp_rates_gets-%s_bisam-%s_tau-%s_%s.pdf", 
-                          date, 
-                          settings$suffix,
-                          gets_lvl,
-                          bisam_prior, 
-                          ifelse(tau == "", "auto", tau), 
-                          setting)
-
-pdf(tpfp_rate_file, width = settings$pdf.width.single, height = settings$pdf.height.single)
-par(mfrow = c(1, 1))
-setup_plot()
-
-# Calculate rates
-tp_rate_ssvs <- summary_table["tr.ssvs", ] / summary_table["true", ]
-tp_rate_gets <- summary_table["tr.gets", ] / summary_table["true", ]
-tp_rate_alasso <- summary_table["tr.alasso", ] / summary_table["true", ]
-
-fp_rate_ssvs <- summary_table["fp.ssvs", ] / summary_table["true", ]
-fp_rate_gets <- summary_table["fp.gets", ] / summary_table["true", ]
-fp_rate_alasso <- summary_table["fp.alasso", ] / summary_table["true", ]
-
-all_rates <- c(tp_rate_ssvs, tp_rate_gets, tp_rate_alasso,
-               fp_rate_ssvs, fp_rate_gets, fp_rate_alasso)
-ylim_max <- 1.1
-
-plot(
-  x = log10(sd_numeric), 
-  y = NULL,
-  xlim = range(log10(sd_numeric)),
-  ylim = c(0, ylim_max),
-  xlab = "Threshold Level (SD, log scale)",
-  ylab = "Rate (relative to true breaks)",
-  main = "True and False Positive Rates",
-  type = "n",
-  axes = FALSE,
-  xaxs = "i",
-  yaxs = "i"
-)
-
-y_ticks <- pretty(c(0, ylim_max), n = 5)
-abline(h = y_ticks, col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
-abline(h = 1, col = colors$gray, lty = 2, lwd = settings$lwd.axis)
-
-# True Positive Rates (solid)
-lines(log10(sd_numeric), tp_rate_ssvs, 
-      col = colors$ssvs, lwd = settings$lwd.line * 1.2, lty = 1)
-points(log10(sd_numeric), tp_rate_ssvs, 
-       col = colors$ssvs, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(sd_numeric), tp_rate_gets, 
-      col = colors$gets, lwd = settings$lwd.line * 1.2, lty = 1)
-points(log10(sd_numeric), tp_rate_gets, 
-       col = colors$gets, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(sd_numeric), tp_rate_alasso, 
-      col = colors$alasso, lwd = settings$lwd.line * 1.2, lty = 1)
-points(log10(sd_numeric), tp_rate_alasso, 
-       col = colors$alasso, pch = 16, cex = settings$cex.point * 1.15)
-
-# False Positive Rates (dashed)
-lines(log10(sd_numeric), fp_rate_ssvs, 
-      col = colors$ssvs, lwd = settings$lwd.line * 1.2, lty = 2)
-points(log10(sd_numeric), fp_rate_ssvs, 
-       col = colors$ssvs, pch = 1, cex = settings$cex.point * 1.15, lwd = settings$lwd.axis)
-
-lines(log10(sd_numeric), fp_rate_gets, 
-      col = colors$gets, lwd = settings$lwd.line * 1.2, lty = 2)
-points(log10(sd_numeric), fp_rate_gets, 
-       col = colors$gets, pch = 1, cex = settings$cex.point * 1.15, lwd = settings$lwd.axis)
-
-lines(log10(sd_numeric), fp_rate_alasso, 
-      col = colors$alasso, lwd = settings$lwd.line * 1.2, lty = 2)
-points(log10(sd_numeric), fp_rate_alasso, 
-       col = colors$alasso, pch = 1, cex = settings$cex.point * 1.15, lwd = settings$lwd.axis)
-
-add_clean_axes(
-  at_x = log10(sd_numeric), 
-  labels_x = breaksize_labels,
-  at_y = y_ticks
-)
-
-legend("topright", 
-       legend = c("BISAM (TP)", "GETS (TP)", "ALASSO (TP)",
-                  "BISAM (FP)", "GETS (FP)", "ALASSO (FP)"),
-       col = c(colors$ssvs, colors$gets, colors$alasso,
-               colors$ssvs, colors$gets, colors$alasso),
-       lty = c(1, 1, 1, 2, 2, 2),
-       pch = c(16, 16, 16, 1, 1, 1),
-       lwd = settings$lwd.line * 1.2,
-       bty = "n",
-       cex = settings$cex.legend,
-       pt.cex = settings$cex.point,
-       ncol = 1)
-
-dev.off()
-
-# Individual plot for Near Misses
-near_miss_file_individual <- sprintf("./output/simulation/%s/%s_nearmiss_gets-%s_bisam-%s_tau-%s_%s.pdf", 
-                                     date, 
-                                     settings$suffix,
-                                     gets_lvl,
-                                     bisam_prior, 
-                                     ifelse(tau == "", "auto", tau), 
-                                     setting)
-
-pdf(near_miss_file_individual, width = settings$pdf.width.single, height = settings$pdf.height.single)
-par(mfrow = c(1, 1))
-setup_plot()
-
-# Calculate near-miss rates
-near_miss_ssvs <- summary_table["ssvs_1nn_fp", ]
-near_miss_gets <- summary_table["gets_1nn_fp", ]
-near_miss_alasso <- summary_table["alasso_1nn_fp", ]
-
-near_miss_prop_ssvs <- near_miss_ssvs / pmax(summary_table["fp.ssvs", ], 1)
-near_miss_prop_gets <- near_miss_gets / pmax(summary_table["fp.gets", ], 1)
-near_miss_prop_alasso <- near_miss_alasso / pmax(summary_table["fp.alasso", ], 1)
-
-plot(
-  x = log10(sd_numeric), 
-  y = NULL,
-  xlim = range(log10(sd_numeric)),
-  ylim = c(0, 1),
-  xlab = "Threshold Level (SD, log scale)",
-  ylab = "Proportion of False Positives",
-  main = "Near Misses (±1 Period from True Break)",
-  type = "n",
-  axes = FALSE,
-  xaxs = "i",
-  yaxs = "i"
-)
-
-abline(h = seq(0, 1, 0.2), col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
-
-lines(log10(sd_numeric), near_miss_prop_ssvs, 
-      col = colors$ssvs, lwd = settings$lwd.line * 1.2)
-points(log10(sd_numeric), near_miss_prop_ssvs, 
-       col = colors$ssvs, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(sd_numeric), near_miss_prop_gets, 
-      col = colors$gets, lwd = settings$lwd.line * 1.2)
-points(log10(sd_numeric), near_miss_prop_gets, 
-       col = colors$gets, pch = 16, cex = settings$cex.point * 1.15)
-
-lines(log10(sd_numeric), near_miss_prop_alasso, 
-      col = colors$alasso, lwd = settings$lwd.line * 1.2)
-points(log10(sd_numeric), near_miss_prop_alasso, 
-       col = colors$alasso, pch = 16, cex = settings$cex.point * 1.15)
-
-add_clean_axes(
-  at_x = log10(sd_numeric), 
-  labels_x = breaksize_labels,
-  at_y = seq(0, 1, 0.2)
-)
-
-legend("topright", 
-       legend = c("BISAM", "GETS", "ALASSO"),
-       col = c(colors$ssvs, colors$gets, colors$alasso),
-       lty = 1,
-       pch = 16,
-       lwd = settings$lwd.line * 1.2,
-       bty = "n",
-       cex = settings$cex.legend * 1.15,
-       pt.cex = settings$cex.point)
-
-dev.off()
-
-cat("\n\n=================================================================\n")
-cat("All plots have been saved successfully!\n")
-cat("=================================================================\n\n")
-cat("Multi-panel plot (2x2):\n")
-cat("  - Panel A: Precision\n")
-cat("  - Panel B: F1 Score\n")
-cat("  - Panel C: True and False Positive Rates\n")
-cat("  - Panel D: Near Misses\n\n")
-cat("Individual plots:\n")
-cat("  - Precision\n")
-cat("  - F1 Score\n")
-cat("  - TP/FP Rates\n")
-cat("  - Near Misses\n\n")
 
 # ==============================================================================
 # END OF SCRIPT

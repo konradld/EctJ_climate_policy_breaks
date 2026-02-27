@@ -5,7 +5,7 @@ rm(list = ls())
 
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
-                             FIGURE <- 2
+                             FIGURE <- 2 # in c(2,3,4)
 #===============================================================================
 
 # Get SLURM array ID
@@ -107,9 +107,9 @@ if (is_slurm) {
   source("../code/estimate_bisam_fun.R")
   source("../code/pip_window_fun.R")
 } else {
-  source("./functions/contr_sim_breaks_fun.R")
-  source("./functions/estimate_bisam_fun.R")
-  source("./functions/pip_window_fun.R")
+  source("./R/contr_sim_breaks_fun.R")
+  source("./R/estimate_bisam_fun.R")
+  source("./R/pip_window_fun.R")
 }
 
 sim <- contr_sim_breaks(

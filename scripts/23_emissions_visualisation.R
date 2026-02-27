@@ -102,7 +102,7 @@ add_break_shading_gradient <- function(breaks_to_shade,
 # ==============================================================================
 
 library(stringr)
-source("./functions/pip_window_fun.R")
+source("./R/pip_window_fun.R")
 
 # Load sector-specific results
 bisam_res_sector <- bisam_results
@@ -141,11 +141,7 @@ COLORS <- list(
 )
 
 
-pdf(sprintf("./output/emissions/%s/multi_tau-%s_prior-%s_modprior-%s.pdf",
-            config$date,
-            config$ssvs_settings$tau, 
-            config$ssvs_settings$sis_prior, 
-            config$ssvs_settings$incl_prior),
+pdf("./output/emissions/figure_5.pdf",
     width = 20, height = 7, onefile = TRUE)
 
 # Break plot up in three blocks
