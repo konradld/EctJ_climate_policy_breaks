@@ -36,7 +36,7 @@ config <- list(
     stringsAsFactors = FALSE
   ),
   gets_settings = data.frame(
-    gets_lvl = c(0.05)
+    gets_lvl = c(0.01,0.05)
   ),
   date = "2026-02-27"
 )
@@ -178,24 +178,25 @@ saveRDS(ssvs_i, dir_save)
 formula <- "ltransport.emissions ~ lgdp + lgdp_sq + lpop"
 index   <- c("country", "year")
 
-p.value <- config$gets_settings$gets_lvl
+p_value <- config$gets_settings$gets_lvl
 
-gets_i <- isatpanel(
-  data    = dat,
-  formula = as.formula(formula),
-  index   = index,
-  effect  = "twoways",
-  iis     = TRUE,
-  jsis     = FALSE,
-  fesis   = TRUE, 
-  t.pval  = p.value,
-  print.searchinfo = FALSE)
-
-dir_save <- sprintf(paste0(dir_res, "gets_%s.RDS"), 
-                    p.value)
-
-saveRDS(gets_i, dir_save)
-
+for(p_val in p_value){
+  gets_i <- isatpanel(
+    data    = dat,
+    formula = as.formula(formula),
+    index   = index,
+    effect  = "twoways",
+    iis     = TRUE,
+    jsis     = FALSE,
+    fesis   = TRUE, 
+    t.pval  = p_val,
+    print.searchinfo = FALSE)
+  
+  dir_save <- sprintf(paste0(dir_res, "gets_%s.RDS"), 
+                      p_val)
+  saveRDS(gets_i, dir_save)
+  
+}
 
 # ==============================================================================
 # END OF SCRIPT
