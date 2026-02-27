@@ -1,11 +1,12 @@
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #                       Method Comparison for Break Detection
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-# ==============================================================================
-# SETUP AND INITIALIZATION
-# ==============================================================================
 rm(list = ls())
+
+#===============================================================================
+#           Which Figure to replicate (see paper for numbering)
+                             FIGURE <- 2
+#===============================================================================
 
 # Get SLURM array ID
 run <- commandArgs(trailingOnly = TRUE)
@@ -24,13 +25,21 @@ library(Matrix)
 library(mombf)
 library(glmnet)
 
+if(FIGURE == 2 || FIGURE == 3) {
+  REL_EFFECT <- c(0.5, 1, 1.5, 2, 3, 5, 10)
+  SETUP <- if(FIGURE==2) "sparse" else "dense"
+} else if(FIGURE == 4){
+  REL_EFFECT <- 3
+  SETUP <- 1:20
+}
+
 config <- expand.grid(
   sis_prior = c("imom"),
   gets_lvl = c(0.01, 0.05),
-  rel_effect = c(2, 3, 5), #  or c(0.5, 1, 1.5, 2, 3, 5, 10)
-  tau = c(priorp2g(0.05, 1), priorp2g(0.01, 1)),
+  rel_effect = REL_EFFECT,
+  tau = priorp2g(0.01, 1),
   number_reps = 1:100,
-  setup = c(1:20), # c("sparse", "dense", 'sequence for number of breaks in data') 
+  setup = SETUP,
   date = "2026-01-23",
   stringsAsFactors = FALSE
 )

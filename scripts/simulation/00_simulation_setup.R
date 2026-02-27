@@ -186,7 +186,7 @@ DO_GEWEKE_TEST <- FALSE
 # RUN MODEL
 # ==============================================================================
 
-source("./functions/estimate_bisam_fun.R")
+source("./R/estimate_bisam_fun.R")
 
 data = data
 do_constant = DO_CONST
