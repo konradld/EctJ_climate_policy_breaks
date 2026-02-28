@@ -37,5 +37,3 @@ source("inst/install_bespoke_mombf_3.5.4.R")
 ## Contact
 
 <lucas.konrad@wu.ac.at>
-
-## Lizense
