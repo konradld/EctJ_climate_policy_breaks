@@ -50,7 +50,7 @@ if(is_slurm) {
   dir_res <- sprintf("./output/emissions/%s/", 
                      config$date)
   dir_data <- "./data/CO2DriversEU_dataset_CLEAN.csv"
-  source("./functions/estimate_bisam_fun.R")
+  source("./R/estimate_bisam_fun.R")
 }
 
 dir.create(dir_res, 
