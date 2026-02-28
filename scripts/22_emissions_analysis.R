@@ -106,7 +106,7 @@ for(ff in ls_gets){
 
 # BISAM -------------------------------------------------------------------
 
-source("./functions/pip_window_fun.R")
+source("./R/pip_window_fun.R")
 
 res$ssvs <- list() # initiate new sub-list
 res$iis <- list()

@@ -94,7 +94,7 @@ add_break_shading_gradient <- function(breaks_to_shade,
 # ==============================================================================
 
 library(stringr)
-source("./functions/pip_window_fun.R")
+source("./R/pip_window_fun.R")
 
 # Load sector-specific results
 bisam_res_sector <- bisam_results
