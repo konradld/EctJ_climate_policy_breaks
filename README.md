@@ -7,7 +7,7 @@ This repository contains all necessary files to reproduce the paper 'Bayesian In
 ### Overview
 Important: **First run the `inst/install_bespoke_mombf_3.5.4.R` file** to install the bespoke version of the `mombf` package! 
 - All files to replicate the results of the paper are in `scripts`.
-- The `output` folder contain `simulation` and `application` where results and all figures can be found.
+- The `output/` folder contains `simulation/` and `application/` where results and all figures can be found.
 
 ### Core Functions
 
