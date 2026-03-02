@@ -13,6 +13,7 @@ rm(list = ls())
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
                       FIGURE <- 2 # in c(2,3)
+                      DATE <- "2026-01-23"
 #===============================================================================
 
 # ==============================================================================
@@ -22,7 +23,7 @@ rm(list = ls())
 # Load required libraries (only for data manipulation)
 library(dplyr)
 
-date <- "2026-01-23_SD"
+date <- paste0(DATE, "_SD")
 gets_lvl <- "0.01"
 bisam_prior <- "imom"
 tau <- "3.31744830051061"
@@ -248,7 +249,7 @@ add_clean_axes <- function(side = 1:2, at_x = NULL, labels_x = NULL,
 
 # Output file names
 
-multi_panel_file <- sprintf("./output/simulation/figure_%d.pdf", FIGURE)
+multi_panel_file <- sprintf("./output/simulation/figure_%d_new.pdf", FIGURE)
 
 # Open PDF for multi-panel plot
 pdf(multi_panel_file, width = settings$pdf.width, height = settings$pdf.height)

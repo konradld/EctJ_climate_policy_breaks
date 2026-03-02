@@ -2,13 +2,19 @@
 # BISAM vs GETS vs ALASSO Comparison Analysis
 # 
 # Description: Comprehensive comparison of BISAM, GETS, and Adaptive Lasso 
-#              methods across different threshold levels (SD breakpoints)
+#              methods across different break numbers (BN breakpoints)
 # 
 # Output: Performance metrics, plots, and summary statistics
 ################################################################################
 
 # Clear workspace
 rm(list = ls())
+
+#===============================================================================
+#           Which Figure to replicate (see paper for numbering)
+                      FIGURE <- 4
+                      DATE <- "2026-01-23"
+#===============================================================================
 
 # ==============================================================================
 # 1. SETUP AND DATA LOADING
@@ -17,7 +23,7 @@ rm(list = ls())
 # Load required libraries (only for data manipulation)
 library(dplyr)
 
-date <- "2026-01-23_BN"
+date <- paste0(DATE, "_BN")
 gets_lvl <- "0.01"
 bisam_prior <- "imom"
 tau <- "3.31744830051061"

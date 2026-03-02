@@ -6,6 +6,7 @@ rm(list = ls())
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
                              FIGURE <- 2 # in c(2,3,4)
+                             DATE <- "2026-01-23"
 #===============================================================================
 
 # Get SLURM array ID
@@ -40,7 +41,7 @@ config <- expand.grid(
   tau = priorp2g(0.01, 1),
   number_reps = 1:100,
   setup = SETUP,
-  date = "2026-01-23",
+  date = ifelse(FIGURE == 2 || FIGURE == 3, paste0(DATE, "_SD"), paste0(DATE, "_BN")),
   stringsAsFactors = FALSE
 )
 conf <- config[run_numeric,]
@@ -510,19 +511,18 @@ break_comparison[,24] <- (all_t3 + break_comparison[,1]) == 2
 
 if (is_slurm) {
   dir.create(sprintf("./results/%s/", conf$date), showWarnings = FALSE)
-  
-  # dir.create(sprintf("./results/%s//", conf$date, conf$setup), showWarnings = FALSE)
-  
   folder_path <- sprintf("./results/%s/gets_bisam_comparison_gets-%0.2f_bisam_prior-%s_tau-%s/",
                          conf$date, conf$gets_lvl, conf$sis_prior, conf$tau)
 } else {
-  folder_path <- sprintf("./Simulations/gets_bisam_comparison_gets-%0.2f_bisam_prior-%s_tau-%s/",
-                         conf$gets_lvl, conf$sis_prior, conf$tau)
+  dir.create(sprintf("./output/simulation/%s/", conf$date), showWarnings = FALSE)
+  folder_path <- sprintf("./output/simulation/%s/gets_bisam_comparison_gets-%0.2f_bisam_prior-%s_tau-%s/",
+                         conf$date, conf$gets_lvl, conf$sis_prior, conf$tau)
 }
 
 if (!dir.exists(folder_path)) {dir.create(folder_path)}
 
-file_name <- sprintf("breaksize-%0.1fSD_breaknumber-%s_rep%0.0f.RDS", conf$rel_effect, conf$setup, conf$number_reps)
+file_name <- sprintf("breaksize-%0.1fSD_breaknumber-%s_rep%0.0f.RDS", 
+                     conf$rel_effect, conf$setup, conf$number_reps)
 
 saveRDS(break_comparison, file = paste0(folder_path, file_name))
 
