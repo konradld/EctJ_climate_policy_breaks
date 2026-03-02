@@ -66,7 +66,7 @@ S2_TRUE <- ERROR_SD^2
 # DATA SIMULATION
 # ==============================================================================
 
-source("./scripts/simulation/00_sim_breaks_for_viz.R")
+source("./scripts/00_sim_breaks_for_viz.R")
 
 sim <- contr_sim_breaks(
   n = Ni, 
@@ -192,7 +192,7 @@ data = data
 do_constant = DO_CONST
 do_individual_fe = DO_INDIV_FE
 do_time_fe = DO_TIME_FE
-# do_step_saturation = DO_STEP_SATURATION
+do_step_saturation = DO_STEP_SATURATION
 y_index = Y_INDEX
 i_index = I_INDEX
 t_index = T_INDEX
@@ -227,7 +227,7 @@ mod <- estimate_bisam(
   do_constant = DO_CONST,
   do_individual_fe = DO_INDIV_FE,
   do_time_fe = DO_TIME_FE,
-  # do_step_saturation = DO_STEP_SATURATION,
+  do_step_saturation = DO_STEP_SATURATION,
   y_index = Y_INDEX,
   i_index = I_INDEX,
   t_index = T_INDEX,
@@ -258,48 +258,6 @@ mod <- estimate_bisam(
   do_geweke_test = DO_GEWEKE_TEST
 )
 
-if (DO_TWOSTAGE) {
-  pip <- mod$coefs$omega
-  pip_q80 <- quantile(pip[pip > 0], 0.5)
-  steps_to_check = which(pip > pip_q80)
-  
-  mod <- estimate_bisam(
-    data = data,
-    do_constant = DO_CONST,
-    do_individual_fe = DO_INDIV_FE,
-    do_time_fe = DO_TIME_FE,
-    # do_step_saturation = DO_STEP_SATURATION,
-    y_index = Y_INDEX,
-    i_index = I_INDEX,
-    t_index = T_INDEX,
-    do_center_y = DO_CENTER_Y,
-    do_scale_y = DO_SCALE_Y,
-    do_center_x = DO_CENTER_X,
-    do_scale_x = DO_SCALE_X,
-    Ndraw = NDRAW,
-    Nburn = NBURN,
-    beta_prior = BETA_PRIOR,
-    step_size_prior = STEP_SIZE_PRIOR,
-    step_incl_prior = STEP_INCL_PRIOR,
-    beta_variance_scale = BETA_VARIANCE_SCALE,
-    sigma2_shape = SIGMA2_SHAPE,
-    sigma2_rate = SIGMA2_RATE,
-    sigma2_hyper_p = SIGMA2_HYPER_P,
-    step_incl_prob = STEP_INCL_PROB,
-    step_incl_alpha = STEP_INCL_ALPHA,
-    step_incl_beta = STEP_INCL_BETA,
-    step_size_scale = TAU,
-    do_split_Z = DO_SPLIT_Z,
-    do_cluster_s2 = DO_CLUSTER_S2,
-    do_check_outlier = DO_CHECK_OUTLIER,
-    outlier_incl_alpha = OUTLIER_INCL_ALPHA,
-    outlier_incl_beta = OUTLIER_INCL_BETA,
-    outlier_scale = OUTLIER_SCALE,
-    steps_to_check = steps_to_check,
-    do_sparse_computation = DO_SPARSE_COMPUTATION,
-    do_geweke_test = DO_GEWEKE_TEST
-  )
-}
 
 # ==============================================================================
 # PLOTTING
