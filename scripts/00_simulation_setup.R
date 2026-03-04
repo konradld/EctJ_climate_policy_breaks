@@ -271,35 +271,31 @@ N_mod <- mod$meta$sample['N']
 # Color palette
 COL_MAIN <- "#2166AC"    # Blue
 COL_STEP <- "#B2182B"    # Red
-COL_FIT <- "#1B9E77"     # Teal
+COL_FIT  <- "#1B9E77"    # Teal
+COL_IIS  <- "#762A83"    # Purple
 COL_GRID <- "gray70"
 
-
-pdf(sprintf("./output/simulations/sim_setup_%s.pdf", 
-            setup_type), 
+pdf(sprintf("./output/simulation/sim_setup_%s.pdf", setup_type),
     width = 16, height = 9)
 
-# Set up plotting parameters
 par(
-  mfrow = c(2, 1), 
-  mar = c(1, 4.5, 1.5, 1),
-  oma = c(1, 0, 2, 0),
+  mfrow = c(2, 1),
+  mar  = c(1, 4.5, 1.5, 1),
+  oma  = c(1, 0, 2, 0),
   cex.axis = 1,
-  cex.lab = 1.25,
+  cex.lab  = 1.25,
   las = 1
 )
 
 # ---- Plot 1: Omega coefficients ----
 
-# Create omega vector with NAs at country boundaries
 omega_with_breaks <- mod$coefs$omega
-country_boundaries_a <- (1:(n_mod - 1)) * (t_mod - 3)
 
 omega_plot <- rep(NA, length(data[, 3]))
 current_pos <- 1
 for(i in 1:n_mod) {
   start_idx <- (i-1) * (t_mod) + 3
-  end_idx <- i * (t_mod) - 1
+  end_idx   <- i * (t_mod) - 1
   segment_length <- end_idx - start_idx + 1
   
   omega_plot[start_idx:end_idx] <- omega_with_breaks[current_pos:(current_pos + segment_length - 1)]
@@ -308,12 +304,11 @@ for(i in 1:n_mod) {
 
 x_coords_a <- 1:length(omega_plot)
 
-# Plot omega coefficients
 plot(
   x_coords_a, omega_plot,
   type = "l",
-  col = COL_MAIN,
-  lwd = 2,
+  col  = COL_MAIN,
+  lwd  = 2,
   ylim = c(0, 1),
   xlab = "",
   ylab = "PIP",
@@ -322,56 +317,41 @@ plot(
   frame.plot = FALSE
 )
 
-# Add reference lines
 abline(h = c(0, 0.25, 0.5, 0.75, 1), lty = 3, col = COL_GRID, lwd = 0.8)
+abline(v = 0:Ni * Nt,  lty = 2, col = COL_GRID, lwd = 0.8)
+abline(v = POS_STEP,   lty = 2, col = COL_STEP,  lwd = 1)
 
-abline(v = 0:Ni * Nt, lty = 2, col = COL_GRID, lwd = 0.8)
-
-abline(v = POS_STEP, lty = 2, col = COL_STEP, lwd = 1) 
-
-# Legend
 legend(
-  "topright", 
+  "topright",
   legend = c("PIP", "True Breaks"),
-  col = c(COL_MAIN, COL_STEP),
-  lty = c(1, 2),
-  lwd = c(2, 1.5),
-  bty = "n",
-  cex = 1.25
+  col    = c(COL_MAIN, COL_STEP),
+  lty    = c(1, 2),
+  lwd    = c(2, 1.5),
+  bty    = "n",
+  cex    = 1.25
 )
 
-mtext(
-  side = 3, 
-  line = 0.5, 
-  text = "Panel A: PIP estimates", 
-  adj = 0, 
-  font = 2, 
-  cex = 1.5
-)
+mtext(side = 3, line = 0.5, text = "Panel A: PIP estimates",
+      adj = 0, font = 2, cex = 1.5)
 
-# Add unit labels
 midpoints_a <- sapply(1:Ni, function(i) {
-  start_idx <- (i-1) * Nt + 1
-  end_idx <- i * (Nt)
-  mean(c(start_idx, end_idx)) - .5
+  mean(c((i-1)*Nt + 1, i*Nt)) - .5
 })
-text(
-  x = midpoints_a,
-  y = 0,
-  labels = paste0("Unit ", seq_len(Ni)),
-  pos = 1,
-  xpd = TRUE,
-  cex = 1.25
-)
+text(x = midpoints_a, y = 0,
+     labels = paste0("Unit ", seq_len(Ni)),
+     pos = 1, xpd = TRUE, cex = 1.25)
 
-# ---- Plot 2: Response variable ----
-par(mar = c(3, 4.5, 0.5, 1))
+# ---- Plot 2: Response variable + IIS on secondary y-axis ----
+par(mar = c(3, 4.5, 0.5, 4.5))   # right margin expanded for secondary axis
 
+iis_probs <- mod$coefs$iis
+
+# Primary axis: observed y
 plot(
-  data[, 3], 
-  cex = 0.6,
-  pch = 19, 
-  col = adjustcolor(COL_MAIN, alpha.f = 0.4),
+  data[, 3],
+  cex  = 0.6,
+  pch  = 19,
+  col  = adjustcolor(COL_MAIN, alpha.f = 0.4),
   xlab = "",
   ylab = "Response (y)",
   main = "",
@@ -379,73 +359,86 @@ plot(
   frame.plot = FALSE
 )
 
-# Reference lines
 abline(v = 0:Ni * Nt, lty = 2, col = COL_GRID, lwd = 0.8)
-abline(v = POS_STEP, col = COL_STEP, lty = 2, lwd = 1.5)
-# abline(h = sim$true.const, lty = 3, col = COL_GRID, lwd = 0.8)
-# abline(h = sim$true.const + STEP_MEAN_ABS, lty = 3, col = COL_GRID, lwd = 0.8)
+abline(v = POS_STEP,  lty = 2, col = COL_STEP,  lwd = 1.5)
 
-# Fitted lines with breaks every 30th value
 n_fit <- length(true_fit$fitted.values)
-
 for (start in seq(1, n_fit, by = 30)) {
   end <- min(start + 29, n_fit)
-  lines(start:end, true_fit$fitted.values[start:end], col = scales::alpha(COL_STEP, 0.75), lwd = 2)
-  lines(start:end, mod$fitted[start:end],            col = scales::alpha(COL_FIT, 0.75), lwd = 2)
+  lines(start:end, true_fit$fitted.values[start:end],
+        col = scales::alpha(COL_STEP, 0.75), lwd = 2)
+  lines(start:end, mod$fitted[start:end],
+        col = scales::alpha(COL_FIT,  0.75), lwd = 2)
 }
 
-# Legend
+# Secondary axis: IIS probabilities
+# Scale IIS [0,1] into the y-range of the primary plot
+y_range <- range(data[, 3], na.rm = TRUE)
+y_lo    <- y_range[1]
+y_hi    <- y_range[2]
+
+iis_scaled <- y_lo + iis_probs * (y_hi - y_lo)
+
+# Draw IIS spikes in the scaled coordinate space
+segments(
+  x0  = seq_along(iis_probs),
+  y0  = y_lo,
+  x1  = seq_along(iis_probs),
+  y1  = iis_scaled,
+  col = adjustcolor(COL_IIS, alpha.f = 0.5),
+  lwd = 1.2
+)
+
+# Add the secondary axis (right side)
+axis(
+  side = 4,
+  at   = y_lo + c(0, 0.25, 0.5, 0.75, 1) * (y_hi - y_lo),
+  labels = c("0", "0.25", "0.5", "0.75", "1"),
+  col.axis = COL_IIS,
+  col      = COL_IIS,
+  las = 1
+)
+mtext(side = 4, line = 3.2, text = "Outlier Prob.",
+      col = COL_IIS, cex = 1.25, las = 0)
+
+# Threshold line at 0.5 in scaled coordinates
+abline(h = y_lo + 0.5 * (y_hi - y_lo),
+       lty = 3, col = adjustcolor(COL_IIS, alpha.f = 0.6), lwd = 0.8)
+
 legend(
   "topright",
-  legend = c("Observed", "True Mean", "BISAM-fit", "True Breaks"),
-  col = c(
+  legend = c("Observed", "True Mean", "BISAM-fit", "Outlier Prob.", "True Breaks"),
+  col    = c(
     adjustcolor(COL_MAIN, alpha.f = 0.9),
     COL_STEP,
-    COL_FIT, 
+    COL_FIT,
+    adjustcolor(COL_IIS,  alpha.f = 0.8),
     COL_STEP
   ),
-  pch = c(19, NA, NA, NA),
-  lty = c(NA, 1, 1, 2),
-  lwd = c(NA, 2, 2, 1.5),
+  pch = c(19, NA, NA, NA, NA),
+  lty = c(NA,  1,  1,  1,  2),
+  lwd = c(NA,  2,  2,  2, 1.5),
   bty = "n",
   cex = 1.25,
-  bg = "white"
+  bg  = "white"
 )
 
-mtext(
-  side = 3, 
-  line = -0.3, 
-  text = "Panel B: Fitted values of y", 
-  adj = 0, 
-  font = 2, 
-  cex = 1.5
-)
+mtext(side = 3, line = -0.3, text = "Panel B: Fitted values of y & outlier probabilities",
+      adj = 0, font = 2, cex = 1.5)
 
-# Add unit labels
-midpoints_a <- sapply(1:Ni, function(i) {
-  start_idx <- (i-1) * Nt + 1
-  end_idx <- i * (Nt)
-  mean(c(start_idx, end_idx)) - .5
-})
-text(
-  x = midpoints_a,
-  y = min(data[, 3], na.rm = TRUE),
-  labels = paste0("Unit ", seq_len(Ni)),
-  pos = 1,
-  xpd = TRUE,
-  cex = 1.25
-)
+text(x = midpoints_a, y = min(data[, 3], na.rm = TRUE),
+     labels = paste0("Unit ", seq_len(Ni)),
+     pos = 1, xpd = TRUE, cex = 1.25)
 
 # Overall title
 title(
   main = bquote(
-    "Step size: " ~  
-      .(round(STEP_MEAN_REL, 2)) ~ sigma ~ 
-      # " / " ~ tau ~ "=" ~ .(round(TAU, 2)) ~ 
+    "Step size: " ~
+      .(round(STEP_MEAN_REL, 2)) ~ sigma ~
       " / " ~ hat(sigma) ~ "=" ~ .(round(sqrt(mod$coefs$sigma2), 2))
   ),
-  outer = TRUE, 
-  cex.main = 2, 
+  outer    = TRUE,
+  cex.main = 2,
   font.main = 2
 )
 
