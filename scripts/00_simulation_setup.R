@@ -192,7 +192,6 @@ data = data
 do_constant = DO_CONST
 do_individual_fe = DO_INDIV_FE
 do_time_fe = DO_TIME_FE
-do_step_saturation = DO_STEP_SATURATION
 y_index = Y_INDEX
 i_index = I_INDEX
 t_index = T_INDEX
@@ -227,7 +226,6 @@ mod <- estimate_bisam(
   do_constant = DO_CONST,
   do_individual_fe = DO_INDIV_FE,
   do_time_fe = DO_TIME_FE,
-  do_step_saturation = DO_STEP_SATURATION,
   y_index = Y_INDEX,
   i_index = I_INDEX,
   t_index = T_INDEX,
@@ -275,7 +273,7 @@ COL_FIT  <- "#1B9E77"    # Teal
 COL_IIS  <- "#762A83"    # Purple
 COL_GRID <- "gray70"
 
-pdf(sprintf("./output/simulation/sim_setup_%s.pdf", setup_type),
+pdf(sprintf("./output/simulation/appendix_fig_%s.pdf", setup_type),
     width = 16, height = 9)
 
 par(
