@@ -29,7 +29,7 @@ git clone https://github.com/konradld/EctJ_climate_policy_breaks.git
 cd EctJ_climate_policy_breaks
 ```
 
-2. Install the bespoke `mombf` package:
+2. Install the modified `mombf` package:
 ```r
 source("inst/install_bespoke_mombf_3.5.4.R")
 ```
