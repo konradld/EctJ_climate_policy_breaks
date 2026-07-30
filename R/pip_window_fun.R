@@ -1,9 +1,19 @@
-pip_window <- function(mod, win_size, op=c(">=","=="), pip_threshold = 0.50, cred_int = 0.95) {
+pip_window <- function(mod, win_size, op=c(">=","=="), pip_threshold = list(c0 = 1, c1 = 1, kappa = 1/3), cred_int = 0.95) {
   
   data_pip <- mod$draws$omega
   data_steps <- mod$draws$sis
   # Extract column names
   col_names <- colnames(data_pip)
+  
+  # compute PIP threshold
+  if(is.numeric(pip_threshold)) {
+    cat("Fixed PIP threshold of", pip_threshold, "chosen\n")
+  } else {
+    pip_threshold <- (pip_threshold$c1 + pip_threshold$kappa * (win_size - 1)) / 
+      (pip_threshold$c0 + pip_threshold$c1)
+    cat("PIP threshold based on provided parameters:", round(pip_threshold, 2), "\n")
+  }
+  
   
   # Parse unit and time from column names
   parsed <- strsplit(col_names, "\\.")
@@ -138,13 +148,11 @@ pip_window <- function(mod, win_size, op=c(">=","=="), pip_threshold = 0.50, cre
   # Use the position in the FULL unit list, not just units with breaks
   results_table$unit_idx <- match(results_table$unit, unique_units)
   
-  # Balanced panel starting in 2003
   base_time <- times_all[1]
   end_time <- times_all[length(times_all)]
   
   # Calculate period index (1-indexed)
   results_table$time_idx <- match(results_table$start_time, times_all) 
-  # results_table$start_time - base_time + 1
   
   # Calculate number of possible breaks per unit
   t_admissible <- length(times_all)
