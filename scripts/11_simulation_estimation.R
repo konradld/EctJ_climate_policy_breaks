@@ -1,23 +1,14 @@
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#                       Method Comparison for Break Detection
+#                       Example File for simulation estimation
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# ==============================================================================
+# SETUP AND INITIALIZATION
+# ==============================================================================
 rm(list = ls())
 
-#===============================================================================
-#           Which Figure to replicate (see paper for numbering)
-                             FIGURE <- 2 # in c(2,3,4)
-                             DATE <- "2026-01-23"
-#===============================================================================
-
-# Get SLURM array ID
-run <- commandArgs(trailingOnly = TRUE)
-is_slurm <- if (length(run) > 0) TRUE else FALSE
-# code is to be run on a SLURM cluster. For illustration default to setting "1" if run locally 
-run_numeric <- if (is_slurm) as.numeric(run) else 1
-
-if(is_slurm) {
-  .libPaths("~/R_LIBS")
-}
+# code is to be run on a SLURM cluster. For illustration default we set to "1" and run locally 
+run_numeric <- 1
 
 library(stringr)
 library(gets)
@@ -26,22 +17,29 @@ library(Matrix)
 library(mombf)
 library(glmnet)
 
-if(FIGURE == 2 || FIGURE == 3) {
-  REL_EFFECT <- c(0.5, 1, 1.5, 2, 3, 5, 10)
-  SETUP <- if(FIGURE==2) "sparse" else "dense"
-} else if(FIGURE == 4){
-  REL_EFFECT <- 3
-  SETUP <- 1:20
-}
-
 config <- expand.grid(
-  sis_prior = c("imom"),
-  gets_lvl = c(0.01, 0.05),
-  rel_effect = REL_EFFECT,
-  tau = priorp2g(0.01, 1),
+  
+  # simulation setup parameters
+  setup = c("sparse"), # "sparse", "dense" or numeric
+  rel_effect = c(3), # relative mean of size of stepshift in error.sd
+  Nt = c(30), # number of cross-sectional units
+  Ni = c(10), # number of time periods
+  Nx = c(0),  # number of regressors
+  ife = c(FALSE), # unit fixed effecs
+  tfe = c(FALSE), # time fixed effects
+  do_check_outlier = c(FALSE), # include outlier
   number_reps = 1:100,
-  setup = SETUP,
-  date = ifelse(FIGURE == 2 || FIGURE == 3, paste0(DATE, "_SD"), paste0(DATE, "_BN")),
+  
+  # BISAM settings
+  sis_prior = c("imom"),
+  tau = c(priorp2g(0.01, 1)),
+  step_incl_prior = c("bern"), 
+  sigma = "auto", 
+  
+  # GETS setting
+  gets_lvl = c(0.01),
+  
+  date = "2026-07-30",
   stringsAsFactors = FALSE
 )
 conf <- config[run_numeric,]
@@ -50,41 +48,47 @@ conf <- config[run_numeric,]
 # SIMULATION PARAMETERS
 # ==============================================================================
 
-# Prior specification
-PRIOR <- conf$sis_prior
-
 # Data dimensions
-Ni <- 10          # number of sim. observations
-Nt <- 30          # number of sim. time periods
-NX <- 0           # number of regressors
+Ni <- conf$Ni          # number of sim. observations
+Nt <- conf$Nt          # number of sim. time periods
+NX <- conf$Nx           # number of regressors
 
 # Model structure
 DO_CONST <- TRUE    # inclusion of a constant
-DO_INDIV_FE <- FALSE     # inclusion of indiv. fixed effects
-DO_TIME_FE <- FALSE     # inclusion of time fixed effects
-DO_OUTLIERS <- FALSE      # inclusion of indicator saturation
-DO_STEP_SATURATION <- TRUE      # inclusion of stepshift saturation
-DO_INDICATOR_SATURATION = FALSE
-# Outlier and break parameters
-P_OUTL <- 0.0    # probability of outlier in a Series
-P_STEP <- 0.0    # probability of a stepshift in a Series
+DO_INDIV_FE <- conf$ife     # inclusion of indiv. fixed effects
+DO_TIME_FE <- conf$tfe     # inclusion of time fixed effects
+DO_OUTLIERS <- conf$do_check_outlier      # inclusion of indicator saturation
+DO_STEP_SATURATION <- TRUE
 # Error distribution
 ERROR_SD <- 1   # standard deviation of the error
-# Outlier characteristics
-OUTL_MEAN <- 0   # mean of size of outlier
+
 # Stepshift characteristics
 STEP_MEAN_REL <- conf$rel_effect    # relative mean of size of stepshift in error.sd
 
-# Break positions
-POS_OUTL <- 0
+# Outlier positions
+if(DO_OUTLIERS) {
+  OUTL_MEAN <- 3
+  POS_OUTL <- c(15, 47, 130, 222)
+} else {
+  OUTL_MEAN <- 0
+  POS_OUTL <- 0
+}
 
 # Sample random breaks in the N_STEPS observations
 if(conf$setup == "sparse") {
-  N_STEPS <- c(1:4) # sparse
+  if(Ni != 10 | Nt != 30) {
+    N_STEPS <- sample(1:Ni, ceiling(0.0133 * Nt * Ni), replace = T)
+  } else {
+    N_STEPS <- c(1:4) # sparse
+  }
 } else if (conf$setup == "dense") {
-  N_STEPS <- c(1:8, 2, 4, 6, 8) # dense
+  if(Ni != 10 | Nt != 30) {
+    N_STEPS <- sample(1:Ni, ceiling(0.04 * Nt * Ni), replace = T)
+  } else {
+    N_STEPS <- c(1:8, 2, 4, 6, 8) # dense
+  }
 } else if (is.numeric(conf$setup)) {
-  N_STEPS <- sample(1:10, conf$setup, replace = T)
+  N_STEPS <- sample(1:Ni, conf$setup, replace = T)
 } else {
   stop("Simulation setup not available.")
 }
@@ -103,15 +107,9 @@ S2_TRUE <- ERROR_SD^2
 # DATA SIMULATION
 # ==============================================================================
 
-if (is_slurm) {
-  source("../code/contr_sim_breaks_fun.R")
-  source("../code/estimate_bisam_fun.R")
-  source("../code/pip_window_fun.R")
-} else {
-  source("./R/contr_sim_breaks_fun.R")
-  source("./R/estimate_bisam_fun.R")
-  source("./R/pip_window_fun.R")
-}
+source("./R/contr_sim_breaks_fun.R")
+source("./R/estimate_bisam_fun.R")
+source("./R/pip_window_fun.R")
 
 sim <- contr_sim_breaks(
   n = Ni, 
@@ -143,20 +141,30 @@ formula  <- paste('y',
                   paste(colnames(dat)[grepl('x\\d+',colnames(data))],collapse = '+'),
                   sep = '~')
 
-if(NX==0 & DO_CONST){formula <- 'y~c'} #------------- careful not always true !!
+if(NX==0 & DO_CONST){formula <- 'y~c'}
 
 index = c("n","t")
 
 # Break analysis:
 sig_lvl <- conf$gets_lvl
 
+if(DO_INDIV_FE & DO_TIME_FE) {
+  gets_fe <- "twoways"
+} else if(DO_INDIV_FE) {
+  gets_fe <- "individual"
+} else if(DO_TIME_FE) {
+  gets_fe <- "time"
+} else {
+  gets_fe <- "none"
+}
+
 # run model
 res_i <- isatpanel(
   data = cbind(dat, c = 1),
   formula = as.formula(formula),
   index = index,
-  effect = "none",
-  iis = DO_INDICATOR_SATURATION,
+  effect = gets_fe,
+  iis = DO_OUTLIERS,
   jsis = FALSE,
   fesis = TRUE,
   t.pval = sig_lvl,
@@ -292,6 +300,7 @@ selected_sis_idx_min <- which(alasso_coef_vec_min[sis_start_col:ncol(X_full)] !=
 alasso_breaks_min <- sis_names[selected_sis_idx_min]
 results$alasso$selected_breaks_min <- alasso_breaks_min
 
+
 # =========================== BISAM ======================================.=====
 
 data <- sim$data
@@ -309,49 +318,30 @@ DO_SCALE_X <- FALSE
 NDRAW <- 5000L
 NBURN <- 1000L
 
-# Prior settings
-BETA_VARIANCE_SCALE <- 100
-
-SIGMA2_SHAPE <- NULL
-SIGMA2_RATE <- NULL
-SIGMA2_HYPER_P <- 0.9
-
+# Prior specifications
+STEP_SIZE_PRIOR <- conf$sis_prior
+TAU <- as.numeric(conf$tau)
+STEP_INCL_PRIOR <- conf$step_incl_prior
 STEP_INCL_PROB <- 0.5
 STEP_INCL_ALPHA <- 1
 STEP_INCL_BETA <- 1
-
-# Prior specifications
 BETA_PRIOR <- "f"
-STEP_SIZE_PRIOR <- PRIOR
-STEP_INCL_PRIOR <- "bern"
+BETA_VARIANCE_SCALE <- 100
+if(conf$sigma == "auto") {
+  SIGMA2_SHAPE <- SIGMA2_RATE <- NULL
+} else {
+  SIGMA2_SHAPE <- SIGMA2_RATE <- conf$sigma
+}
+SIGMA2_HYPER_P <- 0.9
 
-# Advanced options
-DO_SPLIT_Z <- TRUE
-DO_CLUSTER_S2 <- FALSE
 # Outlier detection options
 OUTLIER_INCL_ALPHA <- 1
 OUTLIER_INCL_BETA <- 10
 OUTLIER_SCALE <- 10
-# Set computational strategy
-DO_SPARSE_COMPUTATION <- FALSE
-# Check model Validity
-DO_GEWEKE_TEST <- FALSE
-
-if(conf$tau == "auto") {
-  if (PRIOR == "imom") {
-    TAU <- priorp2g(0.05, STEP_MEAN_REL, nu = 1, prior = "iMom")
-  } else if (PRIOR == "mom") {
-    TAU <- STEP_MEAN_REL^2 / 2
-  } else {
-    stop("selected prior not implemented")
-  }
-} else {
-  TAU <- as.numeric(conf$tau)
-}
 
 
 # ==============================================================================
-# RUN MODEL
+# RUN BISAM
 # ==============================================================================
 
 results$b_ssvs <- estimate_bisam(
@@ -379,14 +369,10 @@ results$b_ssvs <- estimate_bisam(
   step_incl_alpha = STEP_INCL_ALPHA,
   step_incl_beta = STEP_INCL_BETA,
   step_size_scale = TAU,
-  do_split_Z = DO_SPLIT_Z,
-  do_cluster_s2 = DO_CLUSTER_S2,
-  do_check_outlier = DO_INDICATOR_SATURATION,
+  do_check_outlier = DO_OUTLIERS,
   outlier_incl_alpha = OUTLIER_INCL_ALPHA,
   outlier_incl_beta = OUTLIER_INCL_BETA,
-  outlier_scale = OUTLIER_SCALE,
-  do_sparse_computation = DO_SPARSE_COMPUTATION,
-  do_geweke_test = DO_GEWEKE_TEST
+  outlier_scale = OUTLIER_SCALE
 )
 
 #===============================================================================
@@ -509,20 +495,12 @@ break_comparison[,24] <- (all_t3 + break_comparison[,1]) == 2
 # Save Results
 #===============================================================================
 
-if (is_slurm) {
-  dir.create(sprintf("./results/%s/", conf$date), showWarnings = FALSE)
-  folder_path <- sprintf("./results/%s/gets_bisam_comparison_gets-%0.2f_bisam_prior-%s_tau-%s/",
-                         conf$date, conf$gets_lvl, conf$sis_prior, conf$tau)
-} else {
-  dir.create(sprintf("./output/simulation/%s/", conf$date), showWarnings = FALSE)
-  folder_path <- sprintf("./output/simulation/%s/gets_bisam_comparison_gets-%0.2f_bisam_prior-%s_tau-%s/",
-                         conf$date, conf$gets_lvl, conf$sis_prior, conf$tau)
-}
-
+folder_path <- sprintf("./output/simulation/%s/", conf$date)
 if (!dir.exists(folder_path)) {dir.create(folder_path)}
-
-file_name <- sprintf("breaksize-%0.1fSD_breaknumber-%s_rep%0.0f.RDS", 
-                     conf$rel_effect, conf$setup, conf$number_reps)
+file_name <- sprintf("breaksize-%0.1fSD_breaknumber-%s_Nt-%s_Ni-%s_Nx-%s_ife-%s_tfe-%s_outl-%s_sprior-%s_sigma-%s_rep%0.0f.RDS", 
+                     conf$rel_effect, conf$setup, conf$Nt, conf$Ni, conf$Nx, conf$ife, conf$tfe,
+                     conf$do_check_outlier, conf$step_incl_prior, conf$sigma,
+                     conf$number_reps)
 
 saveRDS(break_comparison, file = paste0(folder_path, file_name))
 
