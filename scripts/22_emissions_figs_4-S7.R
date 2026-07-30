@@ -1,52 +1,48 @@
 ################################################################################
-# Replication Koch et al (2022)
-# 
-# Description: Replication of Koch et al (2022) with BISAM and GETS
-# 
+# Plotting of replication results for Koch et al (2022)
 ################################################################################
 
 rm(list = ls())
-library(mombf)
+
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
-                      FIGURE <- 5
-                      DATE <- "2026-02-27"
+                      FIGURE <- "4" # 4 for figure in main test, S7 for appendix
+                      DATE <- "2026-07-21"
 #===============================================================================
 
+                      
 # ==============================================================================
 # SETUP AND DATA LOADING
 # ==============================================================================
 
 library(dplyr)
+library(stringr)
+                      
+check_outl <- TRUE
+outl_scale <- 10
+beta_prior <- "f"
+beta_scale <- 10
+sis_prior <- "imom"
+tau <- mombf::priorp2g(0.05, q = 1, prior = "iMom")
+incl_prior <- ifelse(FIGURE == "4", "bern", "beta_bern")
 
-config <- list(
-  ssvs_settings = data.frame(
-    sis_prior = c("imom"),
-    tau = sapply(c(0.05), priorp2g, q = 1, prior = c("iMom")), 
-    beta_prior = c("f"),
-    incl_prior = c("bern"),
-    stringsAsFactors = FALSE
-  ),
-  gets_settings = data.frame(
-    gets_lvl = c(0.05)
-  ),
-  date = DATE
-)
-
-
-bisam_path <- sprintf("./output/emissions/%s/ssvs_tau-%s_prior-%s_c0-auto_C0-auto_modprior-%s_v0-0.5.RDS", 
-                      config$date, 
-                      config$ssvs_settings$tau, 
-                      config$ssvs_settings$sis_prior, 
-                      config$ssvs_settings$incl_prior) 
-
+bisam_path <- sprintf("./output/emissions/%s/ssvs_outlier-%s-%s_beta-%s-%s_sisprior-%s-%s_inclprior-%s.RDS",
+                      DATE,
+                      check_outl,
+                      outl_scale,
+                      beta_prior, 
+                      beta_scale,
+                      sis_prior,
+                      tau,
+                      incl_prior) 
 bisam_results <- readRDS(bisam_path)
 
-gets_results_05 <- readRDS(sprintf("./output/emissions/%s/gets_0.05.RDS", 
-                                   config$date))
+gets_results <- readRDS(sprintf("./output/emissions/%s/gets_0.05.RDS", 
+                                DATE))
+
 
 # ==============================================================================
-# FUNCTION DEFINITIONS
+# HELPER FUNCTIONS
 # ==============================================================================
 
 #' Adds shaded rectangular areas to a plot with intensity based on break detection
@@ -86,22 +82,30 @@ add_break_shading_gradient <- function(breaks_to_shade,
     
     if(i > 1) {
       last_range <- breaks_to_shade$start_time[i-1]:breaks_to_shade$end_time[i-1]
+      
       if(breaks_to_shade$unit[i - 1] == breaks_to_shade$unit[i] & 
            breaks_to_shade$start_time[i] %in% last_range) {
+        
         x_left_i <- breaks_to_shade$position_idx[i] + breaks_to_shade$unit_idx[i] + 
-          which(breaks_to_shade$start_time[i] %in% last_range) + 1
+          which(breaks_to_shade$start_time[i] %in% last_range)
+        
+        x_right_i <- breaks_to_shade$position_idx[i] + breaks_to_shade$unit_idx[i] + break_length[i]
+        
       } else {
         x_left_i <- breaks_to_shade$position_idx[i] + breaks_to_shade$unit_idx[i]
+        x_right_i <- breaks_to_shade$position_idx[i] + breaks_to_shade$unit_idx[i] + break_length[i]
       }
+      
     } else {
       x_left_i <- breaks_to_shade$position_idx[i] + breaks_to_shade$unit_idx[i]
+      x_right_i <- breaks_to_shade$position_idx[i] + breaks_to_shade$unit_idx[i] + break_length[i]
     }
 
     
     # Draw rectangle
     rect(
       xleft = x_left_i - 1  - 0.5,
-      xright = breaks_to_shade$position_idx[i] + breaks_to_shade$unit_idx[i] - 1 + break_length[i] - 0.5,
+      xright = x_right_i - 1 - 0.5,
       ybottom = ylim[1],
       ytop = ylim[2],
       col = adjustcolor(colour, alpha.f = alpha),
@@ -114,31 +118,23 @@ add_break_shading_gradient <- function(breaks_to_shade,
 # PLOT FOR OMEGAS AND FITTED (PANEL A + B)
 # ==============================================================================
 
-library(stringr)
-source("./R/pip_window_fun.R")
-
-# Load sector-specific results
-bisam_res_sector <- bisam_results
-mod <- bisam_res_sector
-bisam_coefs <- mod$coef_list
-
-# Get GETS results
-gets_coefs05 <- gets_results_05$isatpanel.result$mean.results
+# Adapt GETS results
+gets_breaks <- gets_results$isatpanel.result$mean.results
 lux_man <- data.frame(coef = -0.15, std.error = 0.05, "t-stat" = 4, "p-value" = 0.0001)
 names(lux_man)[3] <- "t-stat"
 names(lux_man)[4] <- "p-value"
 rownames(lux_man) <- "fesisLuxembourg.2015"
-gets_coefs <- rbind(gets_coefs05, lux_man)
-rownames(gets_coefs) <- gsub("UnitedKingdom", "United Kingdom", rownames(gets_coefs))
+gets_breaks <- rbind(gets_breaks, lux_man)
+rownames(gets_breaks) <- gsub("UnitedKingdom", "United Kingdom", rownames(gets_breaks))
+gets_outlier <- gets_results$retained.indicators$impulses
+gets_outlier <- gets_outlier[-which(grepl("Luxembourg", gets_outlier$id)), ]
 
 
-# Parameters
-PIP_THRESHOLD <- 0.5
-
-# Calculate breaks
-win1_pips <- pip_window(mod, win_size = 1, op = ">=", pip_threshold = PIP_THRESHOLD)
-win2_pips <- pip_window(mod, win_size = 2, op = ">=", pip_threshold = 1 - PIP_THRESHOLD^2)
-win3_pips <- pip_window(mod, win_size = 3, op = ">=", pip_threshold = 1 - PIP_THRESHOLD^3)
+# Select breaks from BISAM results
+source("./R/pip_window_fun.R")
+win1_pips <- pip_window(bisam_results, win_size = 1, op = ">=")
+win2_pips <- pip_window(bisam_results, win_size = 2, op = ">=")
+win3_pips <- pip_window(bisam_results, win_size = 3, op = ">=")
 
 # Color palette
 COLORS <- list(
@@ -154,11 +150,12 @@ COLORS <- list(
 )
 
 
-pdf("./output/emissions/figure_5.pdf",
+pdf(sprintf("./output/emissions/figure_%s.pdf", 
+            FIGURE),
     width = 20, height = 7, onefile = TRUE)
 
 # Break plot up in three blocks
-c_list <- list(c("Germany", "Spain", "France", "United Kingdom", "Italy"),
+c_list <- list(c("Germany", "France", "United Kingdom", "Italy", "Spain"),
                c("Austria", "Belgium", "Netherlands", "Portugal", "Sweden"),
                c("Denmark", "Finland", "Greece", "Ireland", "Luxembourg"))
 
@@ -167,15 +164,15 @@ for(cc in seq_len(length(c_list))) {
 
   cN <- c_list[[cc]]
   # Extract sample dimensions
-  t_mod <- mod$meta$sample['t']
+  t_mod <- bisam_results$meta$sample['t']
   n_mod <- length(cN)
-  N_mod <- mod$meta$sample['N']
+  N_mod <- bisam_results$meta$sample['N']
 
   # Setup plot layout
   par(
     mfrow = c(2, 1),
-    mar = c(1, 4.5, 1.5, 1),
-    oma = c(1, 0, 2, 0),
+    mar = c(1, 4.5, 1, 1),
+    oma = c(0, 0, 0, 0),
     cex.axis = 1,
     cex.lab = 1.25,
     las = 1
@@ -186,8 +183,25 @@ for(cc in seq_len(length(c_list))) {
   # ------------------------------------------------------------------------------
 
   # Create omega vector with NAs at country boundaries
-  omega_with_breaks <- mod$coefs$omega
+  omega_with_breaks <- bisam_results$coefs$omega
   omega_with_breaks <- omega_with_breaks[which(grepl(paste0(cN, collapse = "|"), names(omega_with_breaks)))]
+  
+  if(cc == 1) {
+    omega_with_breaks <- c(omega_with_breaks[-which(grepl("Spain", names(omega_with_breaks)))], 
+                           omega_with_breaks[which(grepl("Spain", names(omega_with_breaks)))])
+  }
+  
+  if(check_outl) {
+    iis <- bisam_results$coefs$iis
+    iis <- iis[which(grepl(paste0(cN, collapse = "|"), names(iis)))]
+    
+    if(cc == 1) {
+      iis <- c(iis[-which(grepl("Spain", names(iis)))], 
+               iis[which(grepl("Spain", names(iis)))])
+    }
+    
+  }
+  
   country_boundaries_a <- (1:(n_mod - 1)) * (t_mod - 3)
 
   omega_plot <- rep(NA, length(omega_with_breaks) + (n_mod - 1))
@@ -220,7 +234,6 @@ for(cc in seq_len(length(c_list))) {
   cN_idx <- data.frame(unit = cN, unit_idx = seq_len(length(cN)))
   
   # add break shading
-  
   if(!is.null(nrow(win1_pips))) {
     win1_pips_temp <- win1_pips |> filter(unit %in% cN) |>
       select(-unit_idx) |> left_join(cN_idx, by ="unit") |>
@@ -243,6 +256,7 @@ for(cc in seq_len(length(c_list))) {
       select(-unit_idx) |> left_join(cN_idx, by ="unit") |>
       relocate(unit_idx, .after = purity) |>
       mutate(position_idx = (unit_idx - 1) * (t_mod - 3) + time_idx)
+
     
     if(nrow(win2_pips_temp) > 0) {
       add_break_shading_gradient(
@@ -254,7 +268,6 @@ for(cc in seq_len(length(c_list))) {
       )
     }
   }
-  
 
   if(!is.null(nrow(win3_pips))) {
     win3_pips_temp <- win3_pips |> filter(unit %in% cN) |>
@@ -284,7 +297,7 @@ for(cc in seq_len(length(c_list))) {
   }
 
   # Mark detected breaks
-  break_indices_orig <- (1:(n_mod * (t_mod - 3)))[omega_with_breaks >= PIP_THRESHOLD]
+  break_indices_orig <- (1:(n_mod * (t_mod - 3)))[omega_with_breaks >= 0.5]
   
   if(length(break_indices_orig) > 0) {
     break_indices_plot <- break_indices_orig + sapply(break_indices_orig, function(x) {
@@ -300,10 +313,10 @@ for(cc in seq_len(length(c_list))) {
   # Add GETS detections
   gets_indices <- (1:(n_mod * (t_mod - 3)))[
     str_extract(names(omega_with_breaks), "(?<=sis\\.).+") %in%
-      str_extract(rownames(gets_coefs), "(?<=fesis).+")
+      str_extract(rownames(gets_breaks), "(?<=fesis).+")
   ]
   
-  if (length(gets_indices) > 0) { # maybe differentiate cross color by sign of break?
+  if (length(gets_indices) > 0) {
     gets_indices_plot <- gets_indices + sapply(gets_indices, function(x) {
       sum(country_boundaries_a < x)
     })
@@ -311,53 +324,43 @@ for(cc in seq_len(length(c_list))) {
            pch = 4, col = COLORS$gets01, lwd = 3.5, cex = 2.5)
   }
 
-  # Add country labels
-  midpoints_a <- sapply(1:n_mod, function(i) {
-    start_idx <- if(i == 1) 1 else (i-1) * (t_mod - 3) + 1
-    end_idx <- i * (t_mod - 3)
-    mean(c(start_idx + (i-1), end_idx + (i-1)))
-  })
-  # text(
-  #   x = midpoints_a,
-  #   y = 0,
-  #   labels = cN,
-  #   pos = 1,
-  #   xpd = TRUE,
-  #   cex = 1.25
-  # )
-
   # Add legend
-  legend(
-    "topright",
-    # inset=c(0,-0.1),
-    # ifelse(cc < 3, "topright", "topleft"),
-    legend = c("PIP", "Detected Breaks", "Positive Break Int.",
-               "Negative Break Int.", "Gets Detections"),
-    col = c(COLORS$main, COLORS$step, NA, NA, COLORS$gets01),
-    fill = c(NA, NA, COLORS$positive_break, COLORS$negative_break, NA),
-    border = c(NA, NA, COLORS$positive_break, COLORS$negative_break, NA),
-    lty = c(1, 2, NA, NA, NA),
-    pch = c(NA, NA, NA, NA, 4),
-    lwd = c(2, 2, NA, NA, 2),
-    cex = 1.25,
-    bg = adjustcolor("white", alpha.f = 0.5)# , horiz = T
-  )
-
-  # Add panel title
-  mtext(
-    side = 3, line = 0.5,
-    text = "Panel A: PIP estimates",
-    adj = 0, font = 2, cex = 2
-  )
+  if(cc == 1) {
+    legend(
+      "topright",
+      legend = c("PIP", 
+                 "Detected Break", "Positive Break Int.",
+                 "Negative Break Int.", "GETS Detection"),
+      col = c(COLORS$main, COLORS$step, NA, NA, COLORS$gets01),
+      fill = c(NA, NA, COLORS$positive_break, COLORS$negative_break, NA),
+      border = c(NA, NA, COLORS$positive_break, COLORS$negative_break, NA),
+      lty = c(1, 2, NA, NA, NA),
+      pch = c(NA, NA, NA, NA, 4),
+      lwd = c(2, 2, NA, NA, 2),
+      cex = 1.25,
+      bg = adjustcolor("white", alpha.f = 0.5)# , horiz = T
+    )
+  }
 
   # ------------------------------------------------------------------------------
   # PANEL B: FITTED VALUES
   # ------------------------------------------------------------------------------
 
   par(mar = c(3, 4.5, 0.5, 1))
+  
+  if(cc == 1) {
+    temp_y <- bisam_results$data$original_data |> filter(country %in% cN)
+    temp_y <- rbind(temp_y[-which(grepl("Spain", temp_y$country)), ],
+                    temp_y[which(grepl("Spain", temp_y$country)), ]) |> select(ltransport.emissions) |> as.matrix()
+    temp_idx <- which(bisam_results$data$original_data$country %in% cN)
+    temp_idx <- c(temp_idx[c(1:24, 49:120)], temp_idx[c(25:48)])
+    
+  } else {
+    temp_y <- bisam_results$data$original_data |> filter(country %in% cN) |> select(ltransport.emissions) |> as.matrix()
+    temp_idx <- which(bisam_results$data$original_data$country %in% cN)
+  }
+  
 
-  temp_y <- mod$data$original_data |> filter(country %in% cN) |> select(ltransport.emissions) |> as.matrix()
-  temp_idx <- which(mod$data$original_data$country %in% cN)
   # Create vectors with NAs at country boundaries
   country_boundaries_b <- (1:(n_mod-1)) * t_mod
   n_total_b <- length(temp_y) + (n_mod - 1)
@@ -395,11 +398,15 @@ for(cc in seq_len(length(c_list))) {
   }
 
   # Calculate fitted values
-  y_fitted_orig <- as.matrix(mod$data$X %*% mod$coefs$beta + mod$data$Z %*% mod$coefs$sis)[temp_idx, ]
-  if(length(mod$coefs$sigma2) > 1) {
-    sigma <- sqrt(mod$coefs$sigma2[which(grepl(paste0(cN, collapse = "|"), names(mod$coefs$sigma2)))])
+  y_fitted_orig <- as.matrix(bisam_results$data$X %*% bisam_results$coefs$beta + bisam_results$data$Z %*% bisam_results$coefs$sis)[temp_idx, ]
+  if(length(bisam_results$coefs$sigma2) > 1) {
+    sigma <- sqrt(bisam_results$coefs$sigma2[which(grepl(paste0(cN, collapse = "|"), names(bisam_results$coefs$sigma2)))])
+    if(cc == 1) {
+      sigma <- c(sigma[-which(grepl("Spain", names(sigma)))], 
+                 sigma[which(grepl("Spain", names(sigma)))])
+    }
   } else {
-    sigma <- rep(sqrt(mod$coefs$sigma2), n_mod)
+    sigma <- rep(sqrt(bisam_results$coefs$sigma2), n_mod)
   }
 
 
@@ -438,10 +445,10 @@ for(cc in seq_len(length(c_list))) {
       border = NA
     )
   }
-
+  
   # Draw fitted line
   lines(x_coords_b, y_fitted_plot, col = COLORS$fit, lwd = 2)
-
+  
   # Overlay observed points
   points(
     x_coords_b, y_plot,
@@ -449,19 +456,47 @@ for(cc in seq_len(length(c_list))) {
     pch = 19,
     col = adjustcolor(COLORS$main, alpha.f = 0.4)
   )
+  
+  # Mark detected outliers
+  if(check_outl) {
+    outlier_indices_orig <- (1:(n_mod * t_mod))[iis >= 0.5]
+    if(length(outlier_indices_orig) > 0) {
+      outlier_indices_plot <- outlier_indices_orig + sapply(outlier_indices_orig, function(x) {
+        sum(country_boundaries_b < x)
+      })
+      abline(v = outlier_indices_plot, col = COLORS$outl_marker, lty = 2, lwd = 1.5)
+    }
+    
+    gets_indices <- (1:(n_mod * (t_mod)))[
+      str_extract(names(iis), "(?<=iis\\.).+") %in%
+        str_extract(rownames(gets_outlier), ".+(?=\\.)")
+    ]
+    
+    if (length(gets_indices) > 0) { # maybe differentiate cross color by sign of break?
+      gets_indices_plot <- gets_indices + sapply(gets_indices, function(x) {
+        sum(country_boundaries_b < x)
+      })
+      points(x = gets_indices_plot, y = y_plot[gets_indices_plot],
+             pch = 4, col = COLORS$gets05, lwd = 2.5, cex = 1.5)
+    }
+    
+    
+  }
 
   # Add legend
-  legend(
-    "topright",
-    legend = c("Observed", "BISAM-fit"), # , "Detected Outlier"
-    col = c(adjustcolor(COLORS$main, alpha.f = 0.9), COLORS$fit), #, COLORS$outl_marker
-    pch = c(19, NA, NA),
-    lty = c(NA, 1, 2),
-    lwd = c(NA, 2, 2),
-    cex = 1.25,
-    bg = adjustcolor("white", alpha.f = 0.5)
-  )
-
+  if(cc == 3) {
+    legend(
+      "topright",
+      legend = if(check_outl) c("Observed", "Fitted values", "BISAM Outlier", "GETS Outlier") else c("Observed", "BISAM-fit"), 
+      col = if(check_outl) c(adjustcolor(COLORS$main, alpha.f = 0.9), COLORS$fit, COLORS$outl_marker, COLORS$gets05) else c(adjustcolor(COLORS$main, alpha.f = 0.9), COLORS$fit), 
+      pch = c(19, NA, NA, 4),
+      lty = c(NA, 1, 2, NA),
+      lwd = c(NA, 2, 2, 2.5),
+      cex = 1.25,
+      bg = adjustcolor("white", alpha.f = 0.5)
+    )
+  }
+  
   # Add country labels
   midpoints_b <- sapply(1:n_mod, function(i) {
     start_idx <- if(i == 1) 1 else (i-1) * t_mod + 1
@@ -475,13 +510,6 @@ for(cc in seq_len(length(c_list))) {
     pos = 1,
     xpd = TRUE,
     cex = 2
-  )
-
-  # Add panel title
-  mtext(
-    side = 3, line = -0.3,
-    text = bquote("Panel B: Fitted values of y"),
-    adj = 0, font = 2, cex = 2
   )
 }
 
