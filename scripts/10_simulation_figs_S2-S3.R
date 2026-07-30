@@ -1,23 +1,30 @@
-# ==============================================================================
-# SETUP AND INITIALIZATION
-# ==============================================================================
+################################################################################
+# Simulation Setup Plots
+#
+# Description: Creates plots of representative simulation setups
+################################################################################
 
 rm(list = ls())
+
+
+# ==============================================================================
+#                         USER CONFIGURATION
+# ==============================================================================
+
+FIGURE <- "S2"          # S2 (sparse), S3 (dense)
+
+
+# ==============================================================================
+# SETUP
+# ==============================================================================
+
 library(mombf)
-
 set.seed(12345)
-
-setup_type <- "sparse" # or "dense"
+setup_type <- if(FIGURE == "S2") "sparse" else "dense"
 
 # ==============================================================================
 # SIMULATION PARAMETERS
 # ==============================================================================
-
-# Prior specification
-PRIOR <- "imom"
-
-# Twostage Estimation?
-DO_TWOSTAGE <- FALSE
 
 # Data dimensions
 Ni <- 10          # number of sim. observations
@@ -25,30 +32,23 @@ Nt <- 30          # number of sim. time periods
 NX <- 0           # number of regressors
 
 # Model structure
-DO_CONST <- FALSE    # inclusion of a constant
-DO_INDIV_FE <- TRUE     # inclusion of indiv. fixed effects
-DO_TIME_FE <- TRUE     # inclusion of time fixed effects
+DO_CONST <- TRUE    # inclusion of a constant
+DO_INDIV_FE <- FALSE     # inclusion of indiv. fixed effects
+DO_TIME_FE <- FALSE     # inclusion of time fixed effects
 DO_OUTLIERS <- FALSE      # inclusion of indicator saturation
 DO_STEP_SATURATION <- TRUE      # inclusion of stepshift saturation
-
-# Outlier and break parameters
-P_OUTL <- 0.0    # probability of outlier in a Series
-P_STEP <- 0.0    # probability of a stepshift in a Series
 
 # Error distribution
 ERROR_SD <- 1   # standard deviation of the error
 
-# Outlier characteristics
-OUTL_MEAN <- 0   # mean of size of outlier
-OUTL_SD <- 0     # variance of size of outlier
-
 # Stepshift characteristics
 STEP_MEAN_REL <- 3      # relative mean of size of stepshift in error.sd
-STEP_SD <- 0.00         # variance of size of stepshift
+
+# Outlier positions
+POS_OUTL <- 0
+OUTL_MEAN <- 0
 
 # Break positions
-POS_OUTL <- 0
-
 if(setup_type == "sparse") {
   POS_STEP <- c(43, 108, 169, 221)
 } else if (setup_type == "dense") {
@@ -56,8 +56,6 @@ if(setup_type == "sparse") {
 } else {
   stop("Simulation setup not available.")
 }
-
-
 POS_STEP_IN_Z <- POS_STEP - 2 * (POS_STEP %/% Nt + 1) - (POS_STEP %/% Nt)
 STEP_MEAN_ABS <- STEP_MEAN_REL * ERROR_SD
 S2_TRUE <- ERROR_SD^2
@@ -66,7 +64,7 @@ S2_TRUE <- ERROR_SD^2
 # DATA SIMULATION
 # ==============================================================================
 
-source("./scripts/00_sim_breaks_for_viz.R")
+source("./R/contr_sim_breaks_fun.R")
 
 sim <- contr_sim_breaks(
   n = Ni, 
@@ -125,18 +123,6 @@ if (DO_INDIV_FE & DO_TIME_FE) {
 }
 
 # ==============================================================================
-# PRIOR HYPERPARAMETERS
-# ==============================================================================
-
-if (PRIOR == "imom") {
-  TAU <- priorp2g(0.05, 1, nu = 1, prior = "iMom")
-} else if (PRIOR == "mom") {
-  TAU <- priorp2g(0.05, 1, nu = 1, prior = "normalMom")
-} else {
-  stop("selected prior not implemented")
-}
-
-# ==============================================================================
 # MODEL ESTIMATION PARAMETERS
 # ==============================================================================
 
@@ -153,73 +139,38 @@ DO_SCALE_X <- FALSE
 NDRAW <- 2000L
 NBURN <- 500L
 
+# Prior specification
+BETA_PRIOR <- "f"
+STEP_SIZE_PRIOR <- "imom"
+STEP_INCL_PRIOR <- "bern"
+
 # Prior settings
-BETA_VARIANCE_SCALE <- 10
+BETA_VARIANCE_SCALE <- 100
 
 SIGMA2_SHAPE <- NULL
 SIGMA2_RATE <- NULL
 SIGMA2_HYPER_P <- 0.90
 
+if (STEP_SIZE_PRIOR == "imom") {
+  STEP_SIZE_SCALE <- priorp2g(0.01, 1, nu = 1, prior = "iMom")
+} else if (STEP_SIZE_PRIOR == "mom") {
+  STEP_SIZE_SCALE <- priorp2g(0.01, 1, nu = 1, prior = "normalMom")
+} else {
+  stop("selected prior not implemented")
+}
+
 STEP_INCL_PROB <- 0.5
-STEP_INCL_ALPHA <- 1
-STEP_INCL_BETA <- 1
 
-# Prior specifications
-BETA_PRIOR <- "f"
-STEP_SIZE_PRIOR <- PRIOR
-STEP_INCL_PRIOR <- "bern"
-
-# Advanced options
-DO_SPLIT_Z <- TRUE
+# Variance settings
 DO_CLUSTER_S2 <- FALSE
 DO_CHECK_OUTLIER <- FALSE
-# Outlier detection options
-OUTLIER_INCL_ALPHA <- 1
-OUTLIER_INCL_BETA <- 10
-OUTLIER_SCALE <- 10
-# Set computational strategy
-DO_SPARSE_COMPUTATION <- FALSE
-# Check model Validity
-DO_GEWEKE_TEST <- FALSE
+DO_SV <- FALSE
 
 # ==============================================================================
 # RUN MODEL
 # ==============================================================================
 
 source("./R/estimate_bisam_fun.R")
-
-data = data
-do_constant = DO_CONST
-do_individual_fe = DO_INDIV_FE
-do_time_fe = DO_TIME_FE
-y_index = Y_INDEX
-i_index = I_INDEX
-t_index = T_INDEX
-do_center_y = DO_CENTER_Y
-do_scale_y = DO_SCALE_Y
-do_center_x = DO_CENTER_X
-do_scale_x = DO_SCALE_X
-Ndraw = NDRAW
-Nburn = NBURN
-beta_prior = BETA_PRIOR
-step_size_prior = STEP_SIZE_PRIOR
-step_incl_prior = STEP_INCL_PRIOR
-beta_variance_scale = BETA_VARIANCE_SCALE
-sigma2_shape = SIGMA2_SHAPE
-sigma2_rate = SIGMA2_RATE
-sigma2_hyper_p = SIGMA2_HYPER_P
-step_incl_prob = STEP_INCL_PROB
-step_incl_alpha = STEP_INCL_ALPHA
-step_incl_beta = STEP_INCL_BETA
-step_size_scale = TAU
-do_split_Z = DO_SPLIT_Z
-do_cluster_s2 = DO_CLUSTER_S2
-do_check_outlier = DO_CHECK_OUTLIER
-outlier_incl_alpha = OUTLIER_INCL_ALPHA
-outlier_incl_beta = OUTLIER_INCL_BETA
-outlier_scale = OUTLIER_SCALE
-do_sparse_computation = DO_SPARSE_COMPUTATION
-do_geweke_test = DO_GEWEKE_TEST
 
 mod <- estimate_bisam(
   data = data,
@@ -243,17 +194,10 @@ mod <- estimate_bisam(
   sigma2_rate = SIGMA2_RATE,
   sigma2_hyper_p = SIGMA2_HYPER_P,
   step_incl_prob = STEP_INCL_PROB,
-  step_incl_alpha = STEP_INCL_ALPHA,
-  step_incl_beta = STEP_INCL_BETA,
-  step_size_scale = TAU,
-  do_split_Z = DO_SPLIT_Z,
+  step_size_scale = STEP_SIZE_SCALE,
   do_cluster_s2 = DO_CLUSTER_S2,
   do_check_outlier = DO_CHECK_OUTLIER,
-  outlier_incl_alpha = OUTLIER_INCL_ALPHA,
-  outlier_incl_beta = OUTLIER_INCL_BETA,
-  outlier_scale = OUTLIER_SCALE,
-  do_sparse_computation = DO_SPARSE_COMPUTATION,
-  do_geweke_test = DO_GEWEKE_TEST
+  do_sv = DO_SV
 )
 
 
@@ -273,7 +217,7 @@ COL_FIT  <- "#1B9E77"    # Teal
 COL_IIS  <- "#762A83"    # Purple
 COL_GRID <- "gray70"
 
-pdf(sprintf("./output/simulation/appendix_fig_%s.pdf", setup_type),
+pdf(sprintf("./output/simulation/appendix_fig_%s.pdf", FIGURE),
     width = 16, height = 9)
 
 par(
