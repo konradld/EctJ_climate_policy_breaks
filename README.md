@@ -1,6 +1,8 @@
-# Replication Package for 'Bayesian Indicator-Saturated Regression for Climate Policy Evaluation'
+# Replication Package for 'Bayesian Indicator-Saturated Regression'
 
-This repository contains all necessary files to reproduce the paper 'Bayesian Indicator-Saturated Regression for Climate Policy Evaluation' by Konrad, Vashold and Crespo Cuaresma
+This repository contains all necessary files to reproduce the paper 'Bayesian Indicator-Saturated Regression' by Konrad, Vashold and Crespo Cuaresma
+
+Updates about and the newest version of the methodology introduced can be found in the [bisam](https://github.com/konradld/bisam) (Bayesian Indicator Saturated Models) repository.
 
 ## Repository Structure
 
