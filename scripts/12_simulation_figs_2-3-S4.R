@@ -5,7 +5,7 @@
 #              methods across different threshold levels (SD) or break numbers (BN)
 #
 # Figures 2 & 3: vary sparse vs dense setting (SD breakpoints), 
-# Figure  4    : vary number of breaks (BN breakpoints) at fixed break size
+# Figure  S4   : vary number of breaks (BN breakpoints) at fixed break size
 #
 # Output: Performance metrics, plots, and summary statistics
 ################################################################################
@@ -16,12 +16,8 @@ rm(list = ls())
 #                         USER CONFIGURATION
 # ==============================================================================
 
-FIGURE <- 3          # 2 (sparse SD), 3 (dense SD), or 4 (BN)
-DATE   <- "2026-01-23"
-GETS_LVL <- 0.01
-
-# Figure 4 only: which break size (in SD) to condition on
-BREAKSIZE_SLCT <- 3
+FIGURE <- "2"          # 2 (sparse SD), 3 (dense SD), or S4 (BN)
+DATE   <- "2026-07-24"
 
 # ==============================================================================
 # 1. SETUP
@@ -29,15 +25,17 @@ BREAKSIZE_SLCT <- 3
 
 library(dplyr)
 
-gets_lvl    <- as.character(GETS_LVL)
+gets_lvl    <- 0.01
 bisam_prior <- "imom"
 tau         <- "3.31744830051061"
+# Figure S4 only: which break size (in SD) to condition on
+BREAKSIZE_SLCT <- 3
 
 # Mode derived from FIGURE choice
-mode <- if (FIGURE %in% c(2, 3)) "SD" else if (FIGURE == 4) "BN" else stop("FIGURE must be 2, 3, or 4")
+mode <- if (FIGURE %in% c(2, 3)) "SD" else if (FIGURE == "S4") "BN" else stop("FIGURE must be 2, 3, or S4")
 
 date      <- paste0(DATE, "_", mode)
-setting   <- switch(as.character(FIGURE), "2" = "sparse", "3" = "dense", "4" = NULL)
+setting   <- switch(as.character(FIGURE), "2" = "sparse", "3" = "dense", "S4" = NULL)
 
 data_path <- sprintf(
   "./output/simulation/%s/gets_bisam_comparison_gets-%s_bisam_prior-%s_tau-%s/",
@@ -109,15 +107,21 @@ cat("\n\nSummary Table:\n"); print(summary_table)
 # 4. PERFORMANCE METRICS
 # ==============================================================================
 
-group_labels <- colnames(summary_table)
+if(mode == "SD") {
+  group_labels <- colnames(summary_table)
+} else {
+  group_labels <- rep(NA, length(colnames(summary_table)))
+  group_labels[seq(2, length(colnames(summary_table)), by = 2)] <- 
+    colnames(summary_table)[seq(2, length(colnames(summary_table)), by = 2)]
+}
 group_numeric <- if (mode == "SD") {
   as.numeric(stringr::str_extract(group_labels, "\\d+\\.\\d(?=SD)"))
 } else {
-  as.numeric(group_labels)
+  as.numeric(colnames(summary_table))
 }
 
 metrics <- data.frame(
-  GRP     = rep(group_labels,  3),
+  GRP     = rep(colnames(summary_table),  3),
   GRP_num = rep(group_numeric, 3),
   Method  = rep(c("BISAM", "GETS", "ALASSO"), each = length(group_vals)),
   TP      = c(summary_table["tr.ssvs",  ], summary_table["tr.gets",  ], summary_table["tr.alasso",  ]),
@@ -132,7 +136,6 @@ metrics <- within(metrics, {
   Recall    <- TP / (TP + FN)
   F1        <- 2 * (Precision * Recall) / (Precision + Recall)
   FDR       <- FP / (TP + FP)
-  Specificity <- 1 - FDR
 })
 
 metrics$Precision[is.nan(metrics$Precision)] <- 0
@@ -177,55 +180,32 @@ setup_plot <- function(no_top_margin = FALSE) {
   )
 }
 
-add_clean_axes <- function(at_x = NULL, labels_x = NULL, at_y = NULL) {
-  axis(1, at = at_x, labels = labels_x, col = colors$gray, col.axis = colors$darkgray, lwd = settings$lwd.axis)
-  axis(2, at = at_y,                    col = colors$gray, col.axis = colors$darkgray, lwd = settings$lwd.axis)
+open_panel <- function(ylab, main, ylim = c(0, 1), add_lines = TRUE) {
+  setup_plot()
+  plot(x_vals, NULL,
+       xlim = range(x_vals), ylim = ylim,
+       xlab = x_label, ylab = ylab, main = main,
+       type = "n", axes = FALSE, xaxs = "i", yaxs = "i")
+  if(add_lines) {
+    abline(h = seq(ylim[1], ylim[2], length.out = 6),
+           col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
+  }
 }
 
-# Convenience: draw lines + points for one method
 draw_series <- function(x, y, col, lty = 1, pch = 16, lwd_pt_factor = 1) {
   lines(x, y, col = col, lwd = settings$lwd.line, lty = lty)
   points(x, y, col = col, pch = pch, cex = settings$cex.point,
          lwd = settings$lwd.axis * lwd_pt_factor)
 }
 
-# ==============================================================================
-# 7. AXIS TRANSFORMATION (log scale for SD mode, linear for BN mode)
-# ==============================================================================
-
-x_transform <- if (mode == "SD") log10 else identity
-x_vals      <- x_transform(group_numeric)
-x_label     <- if (mode == "SD") "Threshold Level (SD, log scale)" else "Number of breaks"
-
-# ==============================================================================
-# 8. CREATE PLOTS
-# ==============================================================================
-
-out_file <- sprintf("./output/simulation/figure_%d.pdf", FIGURE)
-pdf(out_file, width = settings$pdf.width, height = settings$pdf.height)
-par(mfrow = c(2, 2), oma = c(0, 0, 0, 0))
-
-ssvs_idx   <- metrics$Method == "BISAM"
-gets_idx   <- metrics$Method == "GETS"
-alasso_idx <- metrics$Method == "ALASSO"
-
-x_ssvs   <- x_transform(metrics$GRP_num[ssvs_idx])
-x_gets   <- x_transform(metrics$GRP_num[gets_idx])
-x_alasso <- x_transform(metrics$GRP_num[alasso_idx])
-
-# --- helper to open a blank panel ---
-open_panel <- function(ylab, main, ylim = c(0, 1)) {
-  setup_plot()
-  plot(x_vals, NULL,
-       xlim = range(x_vals), ylim = ylim,
-       xlab = x_label, ylab = ylab, main = main,
-       type = "n", axes = FALSE, xaxs = "i", yaxs = "i")
-  abline(h = seq(ylim[1], ylim[2], length.out = 6),
-         col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
+add_clean_axes <- function(at_x = NULL, labels_x = NULL, at_y = NULL) {
+  axis(1, at = at_x, labels = labels_x, col = colors$gray, col.axis = colors$darkgray, lwd = settings$lwd.axis)
+  axis(2, at = at_y,                    col = colors$gray, col.axis = colors$darkgray, lwd = settings$lwd.axis)
 }
 
-std_legend <- function(position = "bottomright") {
+std_legend <- function(position = "bottomright", inset = c(0, 0)) {
   legend(position,
+         inset = inset,
          legend = c("BISAM", "GETS", "ALASSO"),
          col    = c(colors$ssvs, colors$gets, colors$alasso),
          lty = 1, pch = 16, lwd = settings$lwd.line, bty = "n",
@@ -237,6 +217,34 @@ panel_label <- function(label) {
         cex = settings$cex.main, font = 2, adj = 0)
 }
 
+
+# ==============================================================================
+# 7. AXIS TRANSFORMATION (log scale for SD mode, linear for BN mode)
+# ==============================================================================
+
+x_transform <- if (mode == "SD") log10 else identity
+x_vals      <- x_transform(group_numeric)
+x_label     <- if (mode == "SD") "Break Size (SD, log scale)" else "Number of breaks"
+
+# ==============================================================================
+# 8. CREATE PLOTS
+# ==============================================================================
+
+out_file <- sprintf("./output/simulation/figure_%s.pdf", FIGURE)
+pdf(out_file, width = settings$pdf.width, height = settings$pdf.height)
+par(mfrow = c(2, 2), oma = c(0.2, 0.2, 0.2, 0.2))
+
+ssvs_idx   <- metrics$Method == "BISAM"
+gets_idx   <- metrics$Method == "GETS"
+alasso_idx <- metrics$Method == "ALASSO"
+
+x_ssvs   <- x_transform(metrics$GRP_num[ssvs_idx])
+x_gets   <- x_transform(metrics$GRP_num[gets_idx])
+x_alasso <- x_transform(metrics$GRP_num[alasso_idx])
+
+# --- helper to open a blank panel ---
+
+
 # ------------------------------------------------------------------------------
 # Panel A: Precision
 # ------------------------------------------------------------------------------
@@ -247,7 +255,8 @@ draw_series(x_gets,   metrics$Precision[gets_idx],   colors$gets)
 draw_series(x_alasso, metrics$Precision[alasso_idx], colors$alasso)
 
 add_clean_axes(at_x = x_vals, labels_x = group_labels, at_y = seq(0, 1, 0.2))
-std_legend("bottomright")
+std_legend(ifelse(mode == "SD", "topleft", "bottomright"), 
+           inset = ifelse(mode == "SD", c(0.05, 0), c(0, 0)))
 panel_label("A")
 
 # ------------------------------------------------------------------------------
@@ -260,7 +269,7 @@ draw_series(x_gets,   metrics$F1[gets_idx],   colors$gets)
 draw_series(x_alasso, metrics$F1[alasso_idx], colors$alasso)
 
 add_clean_axes(at_x = x_vals, labels_x = group_labels, at_y = seq(0, 1, 0.2))
-std_legend("bottomright")
+# std_legend("bottomright")
 panel_label("B")
 
 # ------------------------------------------------------------------------------
@@ -274,30 +283,33 @@ fp_gets   <- summary_table["fp.gets",  ] / summary_table["true", ]
 fp_alasso <- summary_table["fp.alasso",] / summary_table["true", ]
 
 ylim_max  <- max(c(tp_ssvs, tp_gets, fp_ssvs, fp_gets)) * 1.1
-y_ticks   <- pretty(c(0, ylim_max), n = 5)
+y_ticks <- pretty(c(0, ylim_max), n = 5)
 
 open_panel("Rate (relative to true breaks)", "True and False Positive Rates",
-           ylim = c(0, ylim_max))
-# abline(h = y_ticks, col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
+           ylim = c(0, ylim_max), add_lines = FALSE)
+abline(h = y_ticks, col = colors$lightgray, lty = 1, lwd = settings$lwd.grid)
 abline(h = 1,       col = colors$gray,      lty = 2, lwd = settings$lwd.axis)
 
 draw_series(x_vals, tp_ssvs,   colors$ssvs,   lty = 1, pch = 16)
 draw_series(x_vals, tp_gets,   colors$gets,   lty = 1, pch = 16)
 draw_series(x_vals, tp_alasso, colors$alasso, lty = 1, pch = 16)
-draw_series(x_vals, fp_ssvs,   colors$ssvs,   lty = 2, pch = 1, lwd_pt_factor = 0.8)
-draw_series(x_vals, fp_gets,   colors$gets,   lty = 2, pch = 1, lwd_pt_factor = 0.8)
-draw_series(x_vals, fp_alasso, colors$alasso, lty = 2, pch = 1, lwd_pt_factor = 0.8)
+draw_series(x_vals, fp_ssvs,   colors$ssvs,   lty = 3, pch = 1, lwd_pt_factor = 0.8)
+draw_series(x_vals, fp_gets,   colors$gets,   lty = 3, pch = 1, lwd_pt_factor = 0.8)
+draw_series(x_vals, fp_alasso, colors$alasso, lty = 3, pch = 1, lwd_pt_factor = 0.8)
 
 add_clean_axes(at_x = x_vals, labels_x = group_labels, at_y = y_ticks)
 
-legend("topright",
-       legend = c("BISAM (TP)", "GETS (TP)", "ALASSO (TP)",
-                  "BISAM (FP)", "GETS (FP)", "ALASSO (FP)"),
-       col    = rep(c(colors$ssvs, colors$gets, colors$alasso), 2),
-       lty    = c(1, 1, 1, 2, 2, 2),
-       pch    = c(16, 16, 16, 1, 1, 1),
-       lwd    = settings$lwd.line, bty = "n",
-       cex    = settings$cex.legend * 0.85, pt.cex = settings$cex.point * 0.85, ncol = 1)
+legend("topleft", 
+       inset = c(0.05, 0.15),
+       legend = c("TPR", "FPR"),
+       col = c("grey35", "grey35"),
+       lty = c(1, 3),
+       pch = c(16, 1),
+       lwd = settings$lwd.line,
+       bty = "n",
+       cex = settings$cex.legend,
+       pt.cex = settings$cex.point * 0.9,
+       ncol = 1)
 
 panel_label("C")
 
@@ -308,14 +320,14 @@ nm_ssvs   <- summary_table["ssvs_1nn_fp",  ] / pmax(summary_table["fp.ssvs",  ],
 nm_gets   <- summary_table["gets_1nn_fp",  ] / pmax(summary_table["fp.gets",  ], 1)
 nm_alasso <- summary_table["alasso_1nn_fp",] / pmax(summary_table["fp.alasso",], 1)
 
-open_panel("Proportion of False Positives", "Near Misses (\u00b11 Period)")
+open_panel("Proportion of False Positives", "Near Misses (FP \u00b11 Period of True Break)")
 
 draw_series(x_vals, nm_ssvs,   colors$ssvs)
 draw_series(x_vals, nm_gets,   colors$gets)
 draw_series(x_vals, nm_alasso, colors$alasso)
 
 add_clean_axes(at_x = x_vals, labels_x = group_labels, at_y = seq(0, 1, 0.2))
-std_legend("topright")
+# std_legend("topright")
 panel_label("D")
 
 dev.off()
