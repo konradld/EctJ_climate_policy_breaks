@@ -22,7 +22,7 @@ library(gets)
 library(getspanel)
 library(Matrix)
 library(mombf)
-library(glmnet)  # Added for adaptive Lasso
+library(glmnet)
 
 config <- expand.grid(
   sis_prior = c("imom"),
@@ -30,17 +30,19 @@ config <- expand.grid(
   rel_effect = c(2, 3, 5),
   tau = c(priorp2g(0.01, 1)),
   
-  Nt = 30,
-  Ni = 10,
+  Nt = 30, # change to 25, 50
+  Ni = 10, # change to 50, 100
   
-  Nx = c(0), 
-  ife = c(FALSE), 
-  tfe = c(FALSE),
+  Nx = c(0), # change to 1, 2
   
-  do_check_outlier = c(FALSE),
+  # TWFE with both ife and tfe set to TRUE
+  ife = c(FALSE), # change to TRUE
+  tfe = c(FALSE), # change to TRUE
   
-  step_incl_prior = c("bern"), #  "beta-bern"
-  sigma = "auto", # 0.01 
+  do_check_outlier = c(FALSE), # change to TRUE
+  
+  step_incl_prior = c("bern"), # change to "beta-bern"
+  sigma = "auto", # change to 0.01 
   
   number_reps = 1:100,
   setup = c("sparse", "dense"),

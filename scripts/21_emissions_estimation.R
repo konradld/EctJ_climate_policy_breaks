@@ -1,5 +1,5 @@
 ################################################################################
-# Plotting of replication results for Koch et al (2022)
+# Estimation of models for the replication of Koch et al (2022)
 ################################################################################
 
 rm(list = ls())

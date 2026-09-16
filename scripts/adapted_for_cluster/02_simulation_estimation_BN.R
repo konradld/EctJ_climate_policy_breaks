@@ -22,13 +22,13 @@ library(gets)
 library(getspanel)
 library(Matrix)
 library(mombf)
-library(glmnet)  # Added for adaptive Lasso
+library(glmnet)
 
 config <- expand.grid(
   sis_prior = c("imom"),
   gets_lvl = c(0.01),
   rel_effect = c(3),
-  tau = c(priorp2g(0.01, 1)), # vary threshold?
+  tau = c(priorp2g(0.01, 1)),
   number_reps = 1:100,
   setup = c(1:20),
   date = "2026-07-24_BN",

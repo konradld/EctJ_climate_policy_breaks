@@ -65,7 +65,6 @@ estimate_bisam <- function(
   library(matrixStats)
   require(dplyr)
   library(mombf)
-  # library(glmnet)
   
   # ============================================================================
   # INITIAL SETUP

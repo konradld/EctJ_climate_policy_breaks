@@ -8,6 +8,7 @@
 rm(list = ls())
 
 # code is to be run on a SLURM cluster. For illustration default we set to "1" and run locally 
+# see files in folder 'adapted_for_cluster' for replication of results in paper
 run_numeric <- 1
 
 library(stringr)
