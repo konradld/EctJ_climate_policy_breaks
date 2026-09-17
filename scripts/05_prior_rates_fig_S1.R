@@ -14,7 +14,7 @@ rm(list = ls())
 #                         USER CONFIGURATION
 # ==============================================================================
 
-DATE   <- "2026-07-24"
+DATE   <- "2026-09-17"
 
 # ==============================================================================
 # 1. SETUP
@@ -148,9 +148,9 @@ print(format(tab[, c("prior", "H1_slope_T", "H1_r2")], digits = 3),
 # save for later use
 saveRDS(list(res = res, rates = tab, reps = REPS, step_sd = STEP_SD, Ni = NI,
              tau = c(imom = TAU_IMOM, mom = TAU_MOM, normal = TAU_NORM)),
-        "./output/simulation/prior_rate_comparison.RDS")
+        "./output/prior_rate_comparison.RDS")
 
-cat("\nwrote", "./output/simulation/prior_rate_comparison.RDS", "\n")
+cat("\nwrote", "./output/prior_rate_comparison.RDS", "\n")
 
 # ==============================================================================
 # 4. PLOT SETTINGS
@@ -259,7 +259,7 @@ get <- function(key, arm) {
 # 4. PLOT RESULTS
 # ==============================================================================
 
-cairo_pdf("./output/simulation/figure_S1.pdf", 
+cairo_pdf("./output/figure_S1.pdf", 
           width = settings$width, height =  settings$height,
           pointsize = settings$ps, family = settings$family)
 

@@ -14,7 +14,7 @@ rm(list = ls())
 #                         USER CONFIGURATION
 # ==============================================================================
 
-FIGURE <- "S6"          # S5 relative ratio, S6 differences in percentage points
+FIGURE <- "S5"          # S5 relative ratio, S6 differences in percentage points
 DATE   <- "2026-07-24"
 
 # ==============================================================================

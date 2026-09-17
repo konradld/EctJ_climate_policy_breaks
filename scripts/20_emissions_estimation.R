@@ -4,6 +4,8 @@
 
 rm(list = ls())
 
+start.t <- Sys.time()
+
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
               FIGURE <- "4" # 4 for figure in main test, S7 for appendix
@@ -75,8 +77,8 @@ DO_CENTER_X <- FALSE
 DO_SCALE_X <- FALSE
 
 # MCMC settings
-NDRAW <- 50000L
-NBURN <- 25000L
+NDRAW <- 20000L
+NBURN <- 10000L
 
 # Prior settings
 BETA_VARIANCE_SCALE <- beta_scale
@@ -135,16 +137,16 @@ ssvs_i <- estimate_bisam(
   do_sv = DO_SV
 )
 
-dir_save <- sprintf(paste0(dir_res, 
-                           "ssvs_outlier-%s-%s_beta-%s-%s_sisprior-%s-%s_inclprior-%s.RDS"), 
+dir_save <- sprintf(paste0(dir_res,
+                           "ssvs_outlier-%s-%s_beta-%s-%s_sisprior-%s-%s_inclprior-%s.RDS"),
                     check_outl,
                     outl_scale,
-                    beta_prior, 
+                    beta_prior,
                     beta_scale,
                     sis_prior,
                     tau,
-                    incl_prior)  
-saveRDS(ssvs_i, dir_save)
+                    incl_prior)
+# saveRDS(ssvs_i, dir_save)
 
 # ==============================================================================
 # ESTIMATE GETS
@@ -168,7 +170,10 @@ gets_i <- isatpanel(
 
 dir_save <- sprintf(paste0(dir_res, "gets_%s.RDS"), 
                     p_value)
-saveRDS(gets_i, dir_save)
+# saveRDS(gets_i, dir_save)
+
+
+Sys.time() - start.t
 
 # ==============================================================================
 # END OF SCRIPT
