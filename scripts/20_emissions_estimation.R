@@ -4,8 +4,6 @@
 
 rm(list = ls())
 
-start.t <- Sys.time()
-
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
               FIGURE <- "4" # 4 for figure in main test, S7 for appendix
@@ -51,12 +49,6 @@ EU15   <- c("Austria", "Belgium", "Germany", "Denmark", "Spain", "Finland",
             "Netherlands", "Greece", "Portugal", "Sweden")
 data_    <- data[, c('country','year','ltransport.emissions','lgdp','lgdp_sq','lpop')]
 dat      <- filter(data_, country %in% EU15, year>=1995)
-
-# i_names <- unique(dat$country)
-# t_names <- unique(dat$year)
-# 
-# n <- length(i_names)
-# t <- length(t_names)
 
 # ==============================================================================
 # ESTIMATE BISAM
@@ -146,7 +138,7 @@ dir_save <- sprintf(paste0(dir_res,
                     sis_prior,
                     tau,
                     incl_prior)
-# saveRDS(ssvs_i, dir_save)
+saveRDS(ssvs_i, dir_save)
 
 # ==============================================================================
 # ESTIMATE GETS
@@ -170,10 +162,7 @@ gets_i <- isatpanel(
 
 dir_save <- sprintf(paste0(dir_res, "gets_%s.RDS"), 
                     p_value)
-# saveRDS(gets_i, dir_save)
-
-
-Sys.time() - start.t
+saveRDS(gets_i, dir_save)
 
 # ==============================================================================
 # END OF SCRIPT
