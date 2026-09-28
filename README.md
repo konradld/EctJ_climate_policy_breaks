@@ -42,8 +42,9 @@ For the creation of outputs as they are included in the manuscript and Online Ap
 - Local environment (used for creation of paper figures):
   - Windows 11 Enterprise 25H2 (x64)
   - R (4.6.0)
-    - required packages: `mombf`, `mvtnorm`, `Matrix`, `matrixStats`, `dplyr`, `glmnet`, `RcppEigen`, `extraDistr`, `stringr`, `gets`, `getspanel`, `ggplot2`, `invgamma`
-    - All packages except `mombf` can be installed using `install.packages("pkg-name")`.
+    - required packages: `mombf`, `sparseMatrixStats`, `mvtnorm`, `Matrix`, `matrixStats`, `dplyr`, `glmnet`, `RcppEigen`, `extraDistr`, `stringr`, `gets`, `getspanel`, `ggplot2`, `invgamma`
+    - All packages except `mombf` and `sparseMatrixStats` can be installed using `install.packages("pkg-name")`.
+    - `sparseMatrixStats` can be installed from Bioconductor with `remotes::install_bioc()`
     - Use bespoke `mombf` version 3.5.4 for exact reproduction of results (see installation instructions below). 
 
 - High-performance computing cluster (used for simulation estimation):
