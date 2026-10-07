@@ -1,13 +1,13 @@
 ################################################################################
-# Plotting of replication results for Koch et al (2022)
+# Plots of results for policy detection in European road transport sector
 ################################################################################
 
 rm(list = ls())
 
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
-                      FIGURE <- "4" # 4 for figure in main test, S7 for appendix
-                      DATE <- "2026-07-21"
+                      FIGURE <- "S7" # 4 for figure in main test, S7 for appendix
+                      DATE <- "2026-10-02"
 #===============================================================================
 
                       
@@ -150,7 +150,7 @@ COLORS <- list(
 )
 
 
-pdf(sprintf("./output/emissions/figure_%s.pdf", 
+pdf(sprintf("./output/emissions/figure_%s_dnorm.pdf", 
             FIGURE),
     width = 20, height = 7, onefile = TRUE)
 

@@ -16,7 +16,7 @@ estimate_bisam <- function(
     step_size_prior = c("imom", "mom"),
     step_incl_prior = c("bern", "beta_bern"),
     # Prior hyperparameters
-    beta_variance_scale = 100, # Variance scaling parameter for beta coefficients
+    beta_variance_scale = 100,  # Variance scaling parameter for beta coefficients
     sigma2_shape = NULL,        # Inverse Gamma shape parameter for sigma^2
     sigma2_rate = NULL,         # Inverse Gamma rate parameter for sigma^2
     sigma2_hyper_p = 0.9,       # Probability that the true sigma^2 is smaller than OLS (if sigma2 params are NULL)
@@ -26,9 +26,10 @@ estimate_bisam <- function(
     step_size_scale = 0.348,    # iMOM/MOM scale parameter relative to sigma^2
     do_cluster_s2 = FALSE,
     do_check_outlier = FALSE,
-    outlier_incl_alpha = 1,     # P(outlier) ~ Beta(outlier_incl_alpha, outlier_incl_beta)
-    outlier_incl_beta = 10,     # P(outlier) ~ Beta(outlier_incl_alpha, outlier_incl_beta)
-    outlier_scale = 10,         # variance inflation factor outlier reweighting
+    outlier_prior = c("imom", "norm"), # Outlier mixture distribution component
+    outlier_incl_alpha = 1,            # P(outlier) ~ Beta(outlier_incl_alpha, outlier_incl_beta)
+    outlier_incl_beta = 10,            # P(outlier) ~ Beta(outlier_incl_alpha, outlier_incl_beta)
+    outlier_scale = 10,                # variance inflation factor outlier reweighting
     # Stochastic volatility, only reliable for large T panels
     do_sv = FALSE,               # stochastic volatility: one AR(1) log-variance process per unit over time
     sv_prior_mu_mean = NULL,     # SV level prior mean (NULL -> data-driven log(OLS variance))
@@ -269,6 +270,14 @@ estimate_bisam <- function(
     cat("Inclusion prior is Beta-Bernoulli(step_incl_alpha, step_incl_beta) - 'step_incl_prob' has no meaning\n")
   }
   
+  # --- Outlier Prior ---
+  outlier_prior <- match.arg(outlier_prior)
+  if(!outlier_prior %in% c("imom", "norm")) {
+    stop("outlier prior not implemented, choose outlier_prior = c('imom','norm')")
+  }
+  sqrt_outlier_scale <- sqrt(outlier_scale)
+  
+  
   # ============================================================================
   # STARTING VALUES
   # ============================================================================
@@ -334,6 +343,9 @@ estimate_bisam <- function(
   pip_i <- numeric(r)
   
   # --- Outlier variance inflation factor ---
+  lambda <- ifelse(outlier_prior == "imom", 
+                   2 * outlier_scale, # 2*tau*s2 is variance of iMom(0,1,3,tau,s2) 
+                   outlier_scale)     # tau*s2 for N(0, tau*s2)
   lambda_i <- rep(1, N)
   
   # --- Starting Values for Horseshoe Plug-In ---
@@ -385,7 +397,6 @@ estimate_bisam <- function(
   
   # Pre-compute
   XX_inv <- solve(XX)
-  sqrt_outlier_scale <- sqrt(outlier_scale)
   
   nn <- 2 # number of modelSelection iterations
   
@@ -432,14 +443,18 @@ estimate_bisam <- function(
       
       # Compute log probabilities for outlier models
       log_p0 <- dnorm(residuals, 0, sqrt_s2_i, log = TRUE) + log(1 - k_i)
-      log_p1 <- log_dimom(residuals, gamma0=0, k=1, nu=3, tau=outlier_scale, sigma2=s2_i) + log(k_i)
-      
+      if(outlier_prior == "imom") {
+        log_p1 <- log_dimom(residuals, gamma0 = 0, k = 1, nu = 3, tau=outlier_scale, sigma2 = s2_i) + log(k_i)
+      } else if(outlier_prior == "norm") {
+        log_p1 <- dnorm(residuals, 0, sqrt_outlier_scale * sqrt_s2_i, log = TRUE) + log(k_i)
+      }
+  
       # Direct calculation of log probability
       log_prob_outlier <- log_p1 - matrixStats::rowLogSumExps(cbind(log_p0, log_p1))
-      o_i <- rbinom(N, 1, exp(log_prob_outlier)) # works
+      o_i <- rbinom(N, 1, exp(log_prob_outlier))
       
       # Update variance inflation factors
-      lambda_i <- ifelse(o_i == 0, 1, 2 * outlier_scale) # 2*tau*s2 is variance of iMom(0,1,3,tau,s2)
+      lambda_i <- ifelse(o_i == 0, 1, lambda)
     }
     
     # ==========================================================================

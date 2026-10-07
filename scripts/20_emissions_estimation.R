@@ -1,13 +1,13 @@
 ################################################################################
-# Estimation of models for the replication of Koch et al (2022)
+# Estimation of models for policy detection in European road transport sector
 ################################################################################
 
 rm(list = ls())
 
 #===============================================================================
 #           Which Figure to replicate (see paper for numbering)
-              FIGURE <- "4" # 4 for figure in main test, S7 for appendix
-              DATE <- "2026-07-21"
+              FIGURE <- "S7" # 4 for figure in main test, S7 for appendix
+              DATE <- "2026-10-02"
 #===============================================================================
 
 
@@ -85,6 +85,7 @@ STEP_INCL_ALPHA <- 1
 STEP_INCL_BETA <- 1
 
 DO_CHECK_OUTLIER <- check_outl
+OUTLIER_PRIOR <- "imom"
 OUTLIER_SCALE <- outl_scale
 OUTLIER_INCL_ALPHA <- 1
 OUTLIER_INCL_BETA <- 10
@@ -123,6 +124,7 @@ ssvs_i <- estimate_bisam(
   step_size_scale = TAU,
   do_cluster_s2 = DO_CLUSTER_S2,
   do_check_outlier = DO_CHECK_OUTLIER,
+  outlier_prior = OUTLIER_PRIOR,
   outlier_incl_alpha = OUTLIER_INCL_ALPHA,
   outlier_incl_beta = OUTLIER_INCL_BETA,
   outlier_scale = OUTLIER_SCALE,

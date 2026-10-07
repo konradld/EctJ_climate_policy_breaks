@@ -315,6 +315,7 @@ SIGMA2_RATE <- NULL
 SIGMA2_HYPER_P <- 0.9
 
 # Outlier detection options
+OUTLIER_PRIOR <- "imom"
 OUTLIER_INCL_ALPHA <- 1
 OUTLIER_INCL_BETA <- 10
 OUTLIER_SCALE <- 10
@@ -351,6 +352,7 @@ results$b_ssvs <- estimate_bisam(
   step_incl_beta = STEP_INCL_BETA,
   step_size_scale = TAU,
   do_check_outlier = DO_OUTLIERS,
+  outlier_prior = OUTLIER_PRIOR,
   outlier_incl_alpha = OUTLIER_INCL_ALPHA,
   outlier_incl_beta = OUTLIER_INCL_BETA,
   outlier_scale = OUTLIER_SCALE
