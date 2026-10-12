@@ -187,7 +187,7 @@ res_i <- isatpanel(
   data = cbind(dat, c = 1),
   formula = as.formula(formula),
   index = index,
-  effect = "none",
+  effect = gets_fe,
   iis = DO_OUTLIERS,
   jsis = FALSE,
   fesis = TRUE,
