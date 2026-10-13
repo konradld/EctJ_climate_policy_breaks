@@ -26,7 +26,7 @@ set.seed(20260716)
 TS       <- c(20, 40, 80, 160, 320, 640)
 REPS     <- 200
 STEP_SD  <- 3      # true break size in error SD
-NI       <- 10     # units, for the multiplicity burden log K = log(Ni*(T-3))
+NI       <- 10     # units, for the multiplicity burden log q = log(Ni*(T-3))
 
 #   iMOM : priorp2g(0.01, 1, nu=1, prior="iMom")      = 3.3174
 #   pMOM : priorp2g(0.01, 1, nu=1, prior="normalMom") = 8.7084
@@ -80,12 +80,12 @@ run_all <- function() {
   t0 <- Sys.time()
   for (Ti in TS) {
     L <- sis_block(Ti)
-    K <- ncol(L)
+    q <- ncol(L)
     for (a in prior_arms) {
       pr <- a$f(Ti)
       v0 <- v1 <- numeric(REPS)
       for (r in seq_len(REPS)) {
-        j <- sample(K, 1)
+        j <- sample(q, 1)
         # --- H0: null is TRUE at candidate j
         y0 <- as.numeric(scale(rnorm(Ti), scale = FALSE))
         v0[r] <- log_bf(y0, L[, j, drop = FALSE], pr)
@@ -305,7 +305,7 @@ add_legend("topleft",
 add_panel_label("b")
 
 # ---- (c) evidence vs the multiplicity burden --------------------------------
-logK <- log(NI * (TS - 3))
+logq <- log(NI * (TS - 3))
 ev   <- lapply(h0, function(d) -d$mean)
 ylim_c <- c(0, max(unlist(ev)) * 1.08)
 
@@ -314,9 +314,9 @@ plot(NA, xlim = range(TS), ylim = ylim_c, xlab = "Time periods (T)",
 draw_grid(h = seq(0, 50, 10))
 for (i in seq_along(prior_arms))
   draw_series(TS, ev[[i]], prior_arms[[i]]$col, lty = prior_arms[[i]]$lty)
-lines(TS, logK, col = colors$ink, lty = 2, lwd = settings$lwd_ref)
+lines(TS, logq, col = colors$ink, lty = 2, lwd = settings$lwd_ref)
 add_clean_axes(at_x = xt, at_y = seq(0, 50, 10))
-add_label_end(TS, logK,    "log K", colors$ink,   pos = 1, off = 0.25)
+add_label_end(TS, logq,    "log q", colors$ink,   pos = 1, off = 0.25)
 add_label_end(TS, ev[[3]], "pMOM",  colors$mom,   pos = 3, off = 0.15)
 add_label_end(TS, ev[[4]], "piMOM", colors$imom,  pos = 1, off = 0.25)
 add_label_end(TS, ev[[1]], "local", colors$local, pos = 1, off = 0.25)
