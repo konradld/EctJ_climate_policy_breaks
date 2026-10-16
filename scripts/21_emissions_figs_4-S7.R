@@ -472,7 +472,7 @@ for(cc in seq_len(length(c_list))) {
         str_extract(rownames(gets_outlier), ".+(?=\\.)")
     ]
     
-    if (length(gets_indices) > 0) { # maybe differentiate cross color by sign of break?
+    if (length(gets_indices) > 0) {
       gets_indices_plot <- gets_indices + sapply(gets_indices, function(x) {
         sum(country_boundaries_b < x)
       })

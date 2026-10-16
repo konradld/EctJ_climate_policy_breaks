@@ -85,7 +85,7 @@ S2_TRUE <- ERROR_SD^2
 # DATA SIMULATION
 # ==============================================================================
 
-if (is_slurm) {
+if (is_slurm) { # set to directory where core functions are located on cluster
   source("../code/contr_sim_breaks_fun.R")
   source("../code/estimate_bisam_fun.R")
   source("../code/pip_window_fun.R")
@@ -125,7 +125,7 @@ formula  <- paste('y',
                   paste(colnames(dat)[grepl('x\\d+',colnames(data))],collapse = '+'),
                   sep = '~')
 
-if(NX==0 & DO_CONST){formula <- 'y~c'} #------------- careful not always true !!
+if(NX==0 & DO_CONST){formula <- 'y~c'}
 
 index = c("n","t")
 

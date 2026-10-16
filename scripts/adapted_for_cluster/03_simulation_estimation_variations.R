@@ -124,7 +124,7 @@ S2_TRUE <- ERROR_SD^2
 # DATA SIMULATION
 # ==============================================================================
 
-if (is_slurm) {
+if (is_slurm) { # set to directory where core functions are located on cluster
   source("../code/contr_sim_breaks_fun.R")
   source("../code/estimate_bisam_fun.R")
   source("../code/pip_window_fun.R")

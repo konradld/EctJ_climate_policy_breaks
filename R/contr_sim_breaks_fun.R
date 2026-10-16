@@ -54,7 +54,7 @@ contr_sim_breaks <- function(
     b <- c(b,btfe)
   }
   if(tfe & ife & !const) {
-    warning("Both time and unit fixed effects used.\n Dropping first indiv. FE dummy to avoid perfect colinearity")
+    warning("Both time and unit fixed effects used.\n Dropping first indiv. FE dummy to avoid perfect collinearity")
     X <- X[, -(ncol(X_)+1)]
     b <- b[-(ncol(X_)+1)]
   }

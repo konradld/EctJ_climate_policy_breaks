@@ -3,6 +3,9 @@
 # 
 # Description: F1 Comparison of BISAM and GETS with various settings
 # 
+# Figure S5: relative ratio of F1 differences 
+# Figure S6: F1 differences in percentage points
+# 
 # Output: Performance metrics, plots, and summary statistics
 ################################################################################
 

@@ -129,7 +129,7 @@ estimate_bisam <- function(
   
   # Handle collinearity when both FE are used
   if (do_time_fe & do_individual_fe & !do_constant) {
-    warning("Both time and unit fixed effects used.\nDropping first indiv. FE to avoid perfect colinearity")
+    warning("Both time and unit fixed effects used.\nDropping first indiv. FE to avoid perfect collinearity")
     X <- X[, -(orig_p + 1)]
   }
   

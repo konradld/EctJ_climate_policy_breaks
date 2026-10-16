@@ -1,0 +1,1 @@
+Data used for the re-assesment of climate policies in the European road transport sector are taken from the replication package for the study by Koch et al (2022, https://doi.org/10.1038/s41560-022-01095-6) available at the online repositpory Zenodo (https://doi.org/10.5281/zenodo.6768563).

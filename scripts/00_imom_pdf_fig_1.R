@@ -1,7 +1,7 @@
 ################################################################################
 # iMom prior PDF
 #
-# Figure 1: PDF of iMom prior with different scale paramters tau
+# Figure 1: PDF of iMom distribution with different scale parameters tau
 #
 # Output: Plot of iMom PDF
 ################################################################################

@@ -1,9 +1,7 @@
 ################################################################################
-# Comparison of 
+# Evidence-accumulation rates
 #
-# Description: 
-#
-# Figure S1: vary sparse vs dense setting (SD breakpoints), 
+# Figure S1: Comparison of evidence-accumulation rates for different slab priors
 #
 # Output: Comparison file, plot
 ################################################################################

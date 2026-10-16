@@ -242,8 +242,6 @@ x_ssvs   <- x_transform(metrics$GRP_num[ssvs_idx])
 x_gets   <- x_transform(metrics$GRP_num[gets_idx])
 x_alasso <- x_transform(metrics$GRP_num[alasso_idx])
 
-# --- helper to open a blank panel ---
-
 
 # ------------------------------------------------------------------------------
 # Panel A: Precision
@@ -269,7 +267,6 @@ draw_series(x_gets,   metrics$F1[gets_idx],   colors$gets)
 draw_series(x_alasso, metrics$F1[alasso_idx], colors$alasso)
 
 add_clean_axes(at_x = x_vals, labels_x = group_labels, at_y = seq(0, 1, 0.2))
-# std_legend("bottomright")
 panel_label("B")
 
 # ------------------------------------------------------------------------------
@@ -327,7 +324,6 @@ draw_series(x_vals, nm_gets,   colors$gets)
 draw_series(x_vals, nm_alasso, colors$alasso)
 
 add_clean_axes(at_x = x_vals, labels_x = group_labels, at_y = seq(0, 1, 0.2))
-# std_legend("topright")
 panel_label("D")
 
 dev.off()

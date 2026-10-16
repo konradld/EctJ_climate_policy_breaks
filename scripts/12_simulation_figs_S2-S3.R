@@ -2,7 +2,13 @@
 # Simulation Setup Plots
 #
 # Description: Creates plots of representative simulation setups
+#
+# Figure S2: sparse break environment 
+# Figure S3: dense break environment 
+#
+# Output: Plots
 ################################################################################
+
 
 rm(list = ls())
 
@@ -301,8 +307,6 @@ plot(
 # Reference lines
 abline(v = 0:Ni * Nt, lty = 2, col = COL_GRID, lwd = 0.8)
 abline(v = POS_STEP, col = COL_STEP, lty = 2, lwd = 1.5)
-# abline(h = sim$true.const, lty = 3, col = COL_GRID, lwd = 0.8)
-# abline(h = sim$true.const + STEP_MEAN_ABS, lty = 3, col = COL_GRID, lwd = 0.8)
 
 # Fitted lines with breaks every 30th value
 n_fit <- length(true_fit$fitted.values)
